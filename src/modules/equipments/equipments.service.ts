@@ -47,6 +47,26 @@ export class EquipmentsService {
     });
   }
 
+  async findByCompany(companyId: string) {
+    return this.prisma.equipment.findMany({
+      where: { 
+        companyId,
+        isActive: true 
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
   async findOne(id: string) {
     const equipment = await this.prisma.equipment.findUnique({
       where: { id },

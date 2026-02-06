@@ -38,6 +38,13 @@ export class EquipmentsController {
     });
   }
 
+  @Get('my')
+  @ApiOperation({ summary: 'Get my company equipments' })
+  @ApiResponse({ status: 200, description: 'My equipments retrieved successfully' })
+  async getMyEquipments(@CurrentUser() user: any) {
+    return this.equipmentsService.findByCompany(user.companyId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get equipment by ID' })
   @ApiResponse({ status: 200, description: 'Equipment retrieved successfully' })
