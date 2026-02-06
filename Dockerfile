@@ -2,12 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copiar apenas package files
+# Instalar OpenSSL para Prisma
+RUN apk add --no-cache openssl
+
+# Copiar package files
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Limpar cache e instalar
-RUN npm cache clean --force
+# Instalar dependências
 RUN npm install --legacy-peer-deps
 
 # Copiar código
