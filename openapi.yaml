@@ -1,0 +1,614 @@
+openapi: 3.0.0
+info:
+  title: Equipment Rental Marketplace API
+  version: 1.0.0
+  description: API B2B para marketplace de aluguel de equipamentos entre empresas
+
+servers:
+  - url: http://localhost:3000/api
+    description: Desenvolvimento
+
+tags:
+  - name: Auth
+  - name: Companies
+  - name: Equipments
+  - name: Rentals
+  - name: Admin
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, COMPANY]
+        companyId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Company:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        cnpj:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Equipment:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        pricePerDay:
+          type: number
+        available:
+          type: boolean
+        companyId:
+          type: string
+        company:
+          $ref: '#/components/schemas/Company'
+        images:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Rental:
+      type: object
+      properties:
+        id:
+          type: string
+        equipmentId:
+          type: string
+        equipment:
+          $ref: '#/components/schemas/Equipment'
+        renterCompanyId:
+          type: string
+        renterCompany:
+          $ref: '#/components/schemas/Company'
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        totalPrice:
+          type: number
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, COMPLETED]
+        createdAt:
+          type: string
+          format: date-time
+
+    RegisterDto:
+      type: object
+      required:
+        - email
+        - password
+        - name
+        - companyName
+        - cnpj
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        name:
+          type: string
+        companyName:
+          type: string
+        cnpj:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+
+    LoginDto:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    CreateEquipmentDto:
+      type: object
+      required:
+        - name
+        - description
+        - category
+        - pricePerDay
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        pricePerDay:
+          type: number
+          minimum: 0
+        images:
+          type: array
+          items:
+            type: string
+
+    UpdateEquipmentDto:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        pricePerDay:
+          type: number
+          minimum: 0
+        available:
+          type: boolean
+        images:
+          type: array
+          items:
+            type: string
+
+    CreateRentalDto:
+      type: object
+      required:
+        - equipmentId
+        - startDate
+        - endDate
+      properties:
+        equipmentId:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Cadastro de empresa e usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDto'
+      responses:
+        '201':
+          description: Cadastro realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /companies/me:
+    get:
+      tags:
+        - Companies
+      summary: Dados da minha empresa
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dados da empresa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /equipments:
+    get:
+      tags:
+        - Equipments
+      summary: Listar equipamentos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: available
+          in: query
+          schema:
+            type: boolean
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Lista de equipamentos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Equipment'
+
+    post:
+      tags:
+        - Equipments
+      summary: Criar equipamento
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEquipmentDto'
+      responses:
+        '201':
+          description: Equipamento criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /equipments/{id}:
+    get:
+      tags:
+        - Equipments
+      summary: Detalhes do equipamento
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalhes do equipamento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '404':
+          description: Equipamento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Equipments
+      summary: Atualizar equipamento
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEquipmentDto'
+      responses:
+        '200':
+          description: Equipamento atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Equipamento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Equipments
+      summary: Deletar equipamento
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Equipamento deletado
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Equipamento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rentals:
+    post:
+      tags:
+        - Rentals
+      summary: Solicitar aluguel
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRentalDto'
+      responses:
+        '201':
+          description: Aluguel solicitado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rental'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rentals/my:
+    get:
+      tags:
+        - Rentals
+      summary: Meus aluguéis
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [owner, renter]
+      responses:
+        '200':
+          description: Lista de aluguéis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Rental'
+
+  /rentals/{id}/approve:
+    put:
+      tags:
+        - Rentals
+      summary: Aprovar aluguel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Aluguel aprovado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rental'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Aluguel não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rentals/{id}/reject:
+    put:
+      tags:
+        - Rentals
+      summary: Rejeitar aluguel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Aluguel rejeitado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rental'
+        '403':
+          description: Sem permissão
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Aluguel não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: Listar todos os usuários
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          description: Sem permissão (apenas ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/rentals:
+    get:
+      tags:
+        - Admin
+      summary: Listar todos os aluguéis
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de aluguéis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Rental'
+        '403':
+          description: Sem permissão (apenas ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

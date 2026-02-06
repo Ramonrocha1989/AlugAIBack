@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  COMPANY
+}
+
+enum RentalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  document  String   @unique
+  createdAt DateTime @default(now())
+
+  users      User[]
+  equipments Equipment[]
+  rentals    Rental[]     @relation("RenterCompany")
+
+  @@map("companies")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(COMPANY)
+  companyId String?
+  createdAt DateTime @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@map("users")
+}
+
+model Equipment {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  description String
+  pricePerDay Decimal  @db.Decimal(10, 2)
+  location    String
+  images      String[]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  company Company  @relation(fields: [companyId], references: [id])
+  rentals Rental[]
+
+  @@map("equipments")
+}
+
+model Rental {
+  id               String       @id @default(uuid())
+  equipmentId      String
+  renterCompanyId  String
+  startDate        DateTime
+  endDate          DateTime
+  status           RentalStatus @default(PENDING)
+  createdAt        DateTime     @default(now())
+
+  equipment      Equipment @relation(fields: [equipmentId], references: [id])
+  renterCompany  Company   @relation("RenterCompany", fields: [renterCompanyId], references: [id])
+  payment        Payment?
+
+  @@map("rentals")
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  rentalId  String        @unique
+  amount    Decimal       @db.Decimal(10, 2)
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+
+  rental Rental @relation(fields: [rentalId], references: [id])
+
+  @@map("payments")
+}
