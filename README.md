@@ -90,7 +90,16 @@ DATABASE_URL="postgresql://user:password@localhost:5432/equipment_rental?schema=
 JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 JWT_EXPIRES_IN="7d"
 PORT=3000
+
+# Frontend URL
+FRONTEND_URL="http://localhost:3000"
+
+# Email Configuration (Gmail)
+EMAIL_USER="seu-email@gmail.com"
+EMAIL_PASSWORD="sua-senha-app-do-gmail"
 ```
+
+**Nota**: Para configurar o email do Gmail, veja [EMAIL_SETUP.md](./EMAIL_SETUP.md)
 
 4. Execute as migrations:
 
@@ -117,6 +126,8 @@ docker-compose up -d
 
 - `POST /api/auth/register` - Cadastro de empresa e usuário
 - `POST /api/auth/login` - Login
+- `POST /api/auth/forgot-password` - Solicitar recuperação de senha
+- `POST /api/auth/reset-password` - Resetar senha com token
 
 ### Empresas
 
@@ -171,6 +182,11 @@ Acesse: `http://localhost:3000/api/docs`
 ### Payment (Mock)
 - Pagamento simulado
 - Status: PENDING | PAID | FAILED
+
+### PasswordResetToken
+- Token para recuperação de senha
+- Expira em 1 hora
+- Uso único
 
 ## Integração com Front-end (Next.js + React Query)
 
