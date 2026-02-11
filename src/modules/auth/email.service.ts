@@ -23,7 +23,8 @@ export class EmailService {
   async sendPasswordResetEmail(email: string, token: string) {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    await this.transporter.sendMail({
+    // Envia email de forma assíncrona sem bloquear
+    this.transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: 'Recuperação de Senha - EquipRent',
@@ -35,6 +36,6 @@ export class EmailService {
         <p>Este link expira em 1 hora.</p>
         <p>Se você não solicitou, ignore este email.</p>
       `,
-    });
+    }).catch(err => console.error('Erro ao enviar email:', err));
   }
 }
