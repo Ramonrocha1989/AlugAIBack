@@ -14,9 +14,9 @@ export class EmailService {
 
     try {
       await this.resend.emails.send({
-        from: 'EquipRent <noreply@mercadomaquina.online>',
+        from: 'Mercado Máquina <noreply@mercadomaquina.online>',
         to: email,
-        subject: 'Recuperação de Senha - EquipRent',
+        subject: 'Recuperação de Senha - Mercado Máquina',
         html: `
           <h2>Recuperação de Senha</h2>
           <p>Você solicitou a recuperação de senha.</p>
@@ -36,11 +36,11 @@ export class EmailService {
 
     try {
       await this.resend.emails.send({
-        from: 'EquipRent <noreply@mercadomaquina.online>',
+        from: 'Mercado Máquina <noreply@mercadomaquina.online>',
         to: email,
-        subject: 'Verifique seu email - EquipRent',
+        subject: 'Verifique seu email - Mercado Máquina',
         html: `
-          <h2>Bem-vindo ao EquipRent!</h2>
+          <h2>Bem-vindo ao Mercado Máquina!</h2>
           <p>Obrigado por se cadastrar. Para ativar sua conta, clique no link abaixo:</p>
           <a href="${verifyLink}">${verifyLink}</a>
           <p>Este link expira em 24 horas.</p>
