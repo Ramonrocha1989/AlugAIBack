@@ -8,7 +8,13 @@ async function bootstrap() {
 
   // CORS para Next.js
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: [
+      'https://mercadomaquina.online',
+      'https://www.mercadomaquina.online',
+      'https://jovial-cuchufli-4e3662.netlify.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ],
     credentials: true,
   });
 
