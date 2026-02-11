@@ -13,7 +13,7 @@ export class EmailService {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     this.resend.emails.send({
-      from: 'EquipRent <onboarding@resend.dev>',
+      from: 'EquipRent <noreply@mercadomaquina.online>',
       to: email,
       subject: 'Recuperação de Senha - EquipRent',
       html: `
