@@ -5,6 +5,7 @@ import { randomBytes } from 'crypto';
 import { PrismaService } from '../../common/prisma.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { EmailService } from './email.service';
 
 @Injectable()
@@ -56,6 +57,19 @@ export class AuthService {
       },
     });
 
+    // Gerar token de verificação
+    const verificationToken = randomBytes(32).toString('hex');
+    await this.prisma.emailVerificationToken.create({
+      data: {
+        userId: user.id,
+        token: verificationToken,
+        expiresAt: new Date(Date.now() + 86400000), // 24 horas
+      },
+    });
+
+    // Enviar email de verificação
+    await this.emailService.sendVerificationEmail(user.email, verificationToken);
+
     const token = this.generateToken(user.id, user.email, user.role);
 
     return {
@@ -67,6 +81,7 @@ export class AuthService {
         company: user.company,
       },
       token,
+      message: 'Cadastro realizado! Verifique seu email para ativar sua conta.',
     };
   }
 
@@ -84,6 +99,10 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.emailVerified) {
+      throw new UnauthorizedException('Email não verificado. Verifique sua caixa de entrada.');
     }
 
     const token = this.generateToken(user.id, user.email, user.role);
@@ -168,5 +187,31 @@ export class AuthService {
     });
 
     return { message: 'Senha alterada com sucesso' };
+  }
+
+  async verifyEmail(dto: VerifyEmailDto) {
+    const verificationToken = await this.prisma.emailVerificationToken.findFirst({
+      where: {
+        token: dto.token,
+        expiresAt: { gt: new Date() },
+        usedAt: null,
+      },
+    });
+
+    if (!verificationToken) {
+      throw new BadRequestException('Token inválido ou expirado');
+    }
+
+    await this.prisma.user.update({
+      where: { id: verificationToken.userId },
+      data: { emailVerified: true },
+    });
+
+    await this.prisma.emailVerificationToken.update({
+      where: { id: verificationToken.id },
+      data: { usedAt: new Date() },
+    });
+
+    return { message: 'Email verificado com sucesso' };
   }
 }

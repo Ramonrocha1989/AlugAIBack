@@ -39,16 +39,18 @@ model Company {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      UserRole @default(COMPANY)
-  companyId String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password      String
+  role          UserRole @default(COMPANY)
+  companyId     String?
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
-  company             Company?              @relation(fields: [companyId], references: [id])
-  passwordResetTokens PasswordResetToken[]
+  company                  Company?                   @relation(fields: [companyId], references: [id])
+  passwordResetTokens      PasswordResetToken[]
+  emailVerificationTokens  EmailVerificationToken[]
 
   @@map("users")
 }
@@ -111,4 +113,19 @@ model PasswordResetToken {
   @@index([token])
   @@index([expiresAt])
   @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
 }

@@ -92,14 +92,13 @@ JWT_EXPIRES_IN="7d"
 PORT=3000
 
 # Frontend URL
-FRONTEND_URL="http://localhost:3000"
+FRONTEND_URL="http://localhost:3001"
 
-# Email Configuration (Gmail)
-EMAIL_USER="seu-email@gmail.com"
-EMAIL_PASSWORD="sua-senha-app-do-gmail"
+# Resend API Key
+RESEND_API_KEY="re_your_api_key_here"
 ```
 
-**Nota**: Para configurar o email do Gmail, veja [EMAIL_SETUP.md](./EMAIL_SETUP.md)
+**Nota**: Para configurar o email com Resend, veja [EMAIL_SETUP.md](./EMAIL_SETUP.md)
 
 4. Execute as migrations:
 
@@ -126,6 +125,7 @@ docker-compose up -d
 
 - `POST /api/auth/register` - Cadastro de empresa e usuário
 - `POST /api/auth/login` - Login
+- `POST /api/auth/verify-email` - Verificar email com token
 - `POST /api/auth/forgot-password` - Solicitar recuperação de senha
 - `POST /api/auth/reset-password` - Resetar senha com token
 
@@ -163,6 +163,7 @@ Acesse: `http://localhost:3000/api/docs`
 - Usuário do sistema
 - Vinculado a uma empresa
 - Roles: ADMIN | COMPANY
+- Requer verificação de email para login
 
 ### Company
 - Empresa cadastrada
@@ -186,6 +187,11 @@ Acesse: `http://localhost:3000/api/docs`
 ### PasswordResetToken
 - Token para recuperação de senha
 - Expira em 1 hora
+- Uso único
+
+### EmailVerificationToken
+- Token para verificação de email
+- Expira em 24 horas
 - Uso único
 
 ## Integração com Front-end (Next.js + React Query)
@@ -221,9 +227,11 @@ const { data: equipments } = useQuery({
 
 - Senhas hasheadas com bcrypt
 - JWT para autenticação stateless
+- Verificação de email obrigatória
 - Guards para proteção de rotas
 - Validação de propriedade em operações sensíveis
 - CORS configurado
+- Tokens de uso único com expiração
 
 ## Próximos Passos (Pós-MVP)
 
