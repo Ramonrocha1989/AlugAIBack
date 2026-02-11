@@ -1,31 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+    this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
   async sendPasswordResetEmail(email: string, token: string) {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    // Envia email de forma assíncrona sem bloquear
-    this.transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    this.resend.emails.send({
+      from: 'EquipRent <onboarding@resend.dev>',
       to: email,
       subject: 'Recuperação de Senha - EquipRent',
       html: `
