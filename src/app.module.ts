@@ -5,6 +5,7 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { EquipmentsModule } from './modules/equipments/equipments.module';
 import { RentalsModule } from './modules/rentals/rentals.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { MachinesModule } from './modules/machines/machines.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from './common/prisma.service';
 
@@ -15,6 +16,7 @@ import { PrismaService } from './common/prisma.service';
     EquipmentsModule,
     RentalsModule,
     AdminModule,
+    MachinesModule,
   ],
   providers: [
     PrismaService,
