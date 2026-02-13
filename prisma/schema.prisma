@@ -71,6 +71,8 @@ model User {
   emailVerificationTokens  EmailVerificationToken[]
   machines                 Machine[]
   favorites                Favorite[]
+  reviewsGiven             Review[]                   @relation("ReviewerUser")
+  reviewsReceived          Review[]                   @relation("ReviewedUser")
 
   @@map("users")
 }
@@ -165,6 +167,27 @@ model Favorite {
   @@map("favorites")
 }
 
+model Review {
+  id             String   @id @default(uuid())
+  reviewerId     String
+  reviewedUserId String
+  machineId      String?
+  rating         Int
+  comment        String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  reviewer     User     @relation("ReviewerUser", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewedUser User     @relation("ReviewedUser", fields: [reviewedUserId], references: [id], onDelete: Cascade)
+  machine      Machine? @relation(fields: [machineId], references: [id], onDelete: SetNull)
+
+  @@unique([reviewerId, reviewedUserId, machineId])
+  @@index([reviewedUserId])
+  @@index([reviewerId])
+  @@index([machineId])
+  @@map("reviews")
+}
+
 model Machine {
   id              String          @id @default(uuid())
   businessType    BusinessType
@@ -199,6 +222,7 @@ model Machine {
   
   owner           User            @relation(fields: [ownerId], references: [id])
   favorites       Favorite[]
+  reviews         Review[]
   
   @@index([category])
   @@index([businessType])

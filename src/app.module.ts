@@ -7,6 +7,7 @@ import { RentalsModule } from './modules/rentals/rentals.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { MachinesModule } from './modules/machines/machines.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from './common/prisma.service';
 
@@ -19,6 +20,7 @@ import { PrismaService } from './common/prisma.service';
     AdminModule,
     MachinesModule,
     FavoritesModule,
+    ReviewsModule,
   ],
   providers: [
     PrismaService,
