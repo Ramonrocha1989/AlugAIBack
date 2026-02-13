@@ -30,7 +30,7 @@ export class ReviewsService {
     }
 
     try {
-      return await this.prisma.review.create({
+      const review = await this.prisma.review.create({
         data: {
           reviewerId,
           reviewedUserId: dto.reviewedUserId,
@@ -44,6 +44,19 @@ export class ReviewsService {
           machine: { select: { id: true, name: true } },
         },
       });
+
+      // Criar notificação
+      await this.prisma.notification.create({
+        data: {
+          userId: dto.reviewedUserId,
+          type: 'NEW_REVIEW',
+          title: 'Nova avaliação recebida',
+          message: `${review.reviewer.name} avaliou você com ${dto.rating} estrelas`,
+          link: '/dashboard/reviews',
+        },
+      });
+
+      return review;
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ConflictException('Você já avaliou esta transação');

@@ -8,6 +8,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { MachinesModule } from './modules/machines/machines.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from './common/prisma.service';
 
@@ -21,6 +22,7 @@ import { PrismaService } from './common/prisma.service';
     MachinesModule,
     FavoritesModule,
     ReviewsModule,
+    NotificationsModule,
   ],
   providers: [
     PrismaService,

@@ -43,6 +43,14 @@ enum MachineCategory {
   CONSTRUCTION
 }
 
+enum NotificationType {
+  NEW_REVIEW
+  PRICE_DROP
+  NEW_MESSAGE
+  NEW_MACHINE
+  MACHINE_SOLD
+}
+
 model Company {
   id        String   @id @default(uuid())
   name      String
@@ -73,6 +81,7 @@ model User {
   favorites                Favorite[]
   reviewsGiven             Review[]                   @relation("ReviewerUser")
   reviewsReceived          Review[]                   @relation("ReviewedUser")
+  notifications            Notification[]
 
   @@map("users")
 }
@@ -186,6 +195,24 @@ model Review {
   @@index([reviewerId])
   @@index([machineId])
   @@map("reviews")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt(sort: Desc)])
+  @@map("notifications")
 }
 
 model Machine {
