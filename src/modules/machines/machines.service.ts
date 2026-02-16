@@ -94,7 +94,9 @@ export class MachinesService {
             select: {
               id: true,
               name: true,
+              phone: true,
               isVerifiedSeller: true,
+              plan: true,
             },
           },
         },
@@ -106,6 +108,8 @@ export class MachinesService {
     return {
       data: machines.map(m => ({
         ...m,
+        ownerPhone: m.ownerPhone || m.owner.phone,
+        ownerPlan: m.owner.plan,
         isVerifiedSeller: m.owner.isVerifiedSeller,
       })),
       meta: {
@@ -126,6 +130,7 @@ export class MachinesService {
             id: true,
             name: true,
             email: true,
+            phone: true,
             isVerifiedSeller: true,
           },
         },
@@ -138,6 +143,7 @@ export class MachinesService {
 
     return {
       ...machine,
+      ownerPhone: machine.ownerPhone || machine.owner.phone,
       isVerifiedSeller: machine.owner.isVerifiedSeller,
     };
   }
@@ -171,6 +177,32 @@ export class MachinesService {
       },
     });
     return { message: 'Visualização registrada' };
+  }
+
+  async trackWhatsappClick(id: string) {
+    const machine = await this.prisma.machine.findUnique({ where: { id } });
+    if (!machine) {
+      throw new NotFoundException('Máquina não encontrada');
+    }
+    
+    await this.prisma.machine.update({
+      where: { id },
+      data: { whatsappClicks: { increment: 1 } },
+    });
+    return { message: 'WhatsApp click tracked' };
+  }
+
+  async markQualifiedLead(id: string) {
+    const machine = await this.prisma.machine.findUnique({ where: { id } });
+    if (!machine) {
+      throw new NotFoundException('Máquina não encontrada');
+    }
+    
+    await this.prisma.machine.update({
+      where: { id },
+      data: { qualifiedLeads: { increment: 1 } },
+    });
+    return { message: 'Qualified lead marked' };
   }
 
   async update(id: string, userId: string, dto: UpdateMachineDto) {

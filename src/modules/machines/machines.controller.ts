@@ -75,6 +75,24 @@ export class MachinesController {
     return this.machinesService.incrementView(id);
   }
 
+  @Post(':id/track-whatsapp')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Track WhatsApp click' })
+  @ApiResponse({ status: 200, description: 'Click tracked successfully' })
+  async trackWhatsapp(@Param('id') id: string) {
+    return this.machinesService.trackWhatsappClick(id);
+  }
+
+  @Post(':id/mark-lead')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Mark qualified lead' })
+  @ApiResponse({ status: 200, description: 'Lead marked successfully' })
+  async markLead(@Param('id') id: string) {
+    return this.machinesService.markQualifiedLead(id);
+  }
+
   @Put(':id')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

@@ -16,11 +16,12 @@ export class EquipmentsController {
   @Post()
   @ApiOperation({ summary: 'Create new equipment' })
   @ApiResponse({ status: 201, description: 'Equipment created successfully' })
+  @ApiResponse({ status: 403, description: 'Ad limit reached' })
   async create(
     @CurrentUser() user: any,
     @Body(new ZodValidationPipe(CreateEquipmentSchema)) dto: CreateEquipmentDto,
   ) {
-    return this.equipmentsService.create(user.companyId, dto);
+    return this.equipmentsService.create(user.companyId, user.userId, dto);
   }
 
   @Get()
@@ -51,6 +52,20 @@ export class EquipmentsController {
   @ApiResponse({ status: 404, description: 'Equipment not found' })
   async findOne(@Param('id') id: string) {
     return this.equipmentsService.findOne(id);
+  }
+
+  @Post(':id/track-whatsapp')
+  @ApiOperation({ summary: 'Track WhatsApp click' })
+  @ApiResponse({ status: 200, description: 'Click tracked successfully' })
+  async trackWhatsapp(@Param('id') id: string) {
+    return this.equipmentsService.trackWhatsappClick(id);
+  }
+
+  @Post(':id/mark-lead')
+  @ApiOperation({ summary: 'Mark qualified lead' })
+  @ApiResponse({ status: 200, description: 'Lead marked successfully' })
+  async markLead(@Param('id') id: string) {
+    return this.equipmentsService.markQualifiedLead(id);
   }
 
   @Put(':id')

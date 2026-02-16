@@ -11,6 +11,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ProposalsModule } from './modules/proposals/proposals.module';
 import { UsersModule } from './modules/users/users.module';
+import { PlansModule } from './modules/plans/plans.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from './common/prisma.service';
 
@@ -27,6 +28,7 @@ import { PrismaService } from './common/prisma.service';
     NotificationsModule,
     ProposalsModule,
     UsersModule,
+    PlansModule,
   ],
   providers: [
     PrismaService,

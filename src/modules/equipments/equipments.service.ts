@@ -6,7 +6,31 @@ import { CreateEquipmentDto, UpdateEquipmentDto } from './dto/equipment.dto';
 export class EquipmentsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(companyId: string, dto: CreateEquipmentDto) {
+  async create(companyId: string, userId: string, dto: CreateEquipmentDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true, maxAds: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.plan === 'free') {
+      const activeAdsCount = await this.prisma.equipment.count({
+        where: { 
+          company: { users: { some: { id: userId } } },
+          isActive: true 
+        },
+      });
+
+      if (activeAdsCount >= user.maxAds) {
+        throw new ForbiddenException(
+          'Limite de anúncios atingido. Faça upgrade para o plano Lojista.'
+        );
+      }
+    }
+
     const { dailyPrice, category, ...rest } = dto as any;
     return this.prisma.equipment.create({
       data: {
@@ -15,7 +39,14 @@ export class EquipmentsService {
         companyId,
       },
       include: {
-        company: true,
+        company: {
+          include: {
+            users: {
+              select: { id: true, name: true, plan: true },
+              take: 1,
+            },
+          },
+        },
       },
     });
   }
@@ -33,18 +64,36 @@ export class EquipmentsService {
       if (filters.maxPrice) where.pricePerDay.lte = filters.maxPrice;
     }
 
-    return this.prisma.equipment.findMany({
+    const equipments = await this.prisma.equipment.findMany({
       where,
       include: {
         company: {
-          select: {
-            id: true,
-            name: true,
+          include: {
+            users: {
+              select: { id: true, name: true, plan: true },
+              take: 1,
+            },
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
     });
+
+    return equipments.sort((a, b) => {
+      if (a.isPremium !== b.isPremium) return b.isPremium ? 1 : -1;
+      
+      const planA = a.company.users[0]?.plan || 'free';
+      const planB = b.company.users[0]?.plan || 'free';
+      
+      if (planA !== planB) {
+        if (planA === 'lojista') return -1;
+        if (planB === 'lojista') return 1;
+      }
+      
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    }).map(eq => ({
+      ...eq,
+      ownerPlan: eq.company.users[0]?.plan || 'free',
+    }));
   }
 
   async findByCompany(companyId: string) {
@@ -55,11 +104,13 @@ export class EquipmentsService {
       },
       include: {
         company: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+          include: {
+            users: {
+              select: { id: true, name: true, plan: true },
+              take: 1,
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc'
@@ -72,9 +123,11 @@ export class EquipmentsService {
       where: { id },
       include: {
         company: {
-          select: {
-            id: true,
-            name: true,
+          include: {
+            users: {
+              select: { id: true, name: true, plan: true },
+              take: 1,
+            },
           },
         },
       },
@@ -84,7 +137,41 @@ export class EquipmentsService {
       throw new NotFoundException('Equipment not found');
     }
 
-    return equipment;
+    await this.prisma.equipment.update({
+      where: { id },
+      data: { views: { increment: 1 } },
+    });
+
+    return {
+      ...equipment,
+      ownerPlan: equipment.company.users[0]?.plan || 'free',
+    };
+  }
+
+  async trackWhatsappClick(id: string) {
+    const equipment = await this.prisma.equipment.findUnique({ where: { id } });
+    if (!equipment) {
+      throw new NotFoundException('Equipment not found');
+    }
+    
+    await this.prisma.equipment.update({
+      where: { id },
+      data: { whatsappClicks: { increment: 1 } },
+    });
+    return { message: 'WhatsApp click tracked' };
+  }
+
+  async markQualifiedLead(id: string) {
+    const equipment = await this.prisma.equipment.findUnique({ where: { id } });
+    if (!equipment) {
+      throw new NotFoundException('Equipment not found');
+    }
+    
+    await this.prisma.equipment.update({
+      where: { id },
+      data: { qualifiedLeads: { increment: 1 } },
+    });
+    return { message: 'Qualified lead marked' };
   }
 
   async update(id: string, companyId: string, dto: UpdateEquipmentDto) {

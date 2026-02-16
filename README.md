@@ -133,13 +133,19 @@ docker-compose up -d
 
 - `GET /api/companies/me` - Dados da minha empresa
 
+### Planos
+
+- `GET /api/plans` - Listar planos disponíveis (Free e Lojista)
+
 ### Equipamentos
 
-- `POST /api/equipments` - Criar equipamento
-- `GET /api/equipments` - Listar equipamentos (com filtros)
-- `GET /api/equipments/:id` - Detalhes do equipamento
+- `POST /api/equipments` - Criar equipamento (valida limite de anúncios)
+- `GET /api/equipments` - Listar equipamentos (ordenados por plano)
+- `GET /api/equipments/:id` - Detalhes do equipamento (incrementa views)
 - `PUT /api/equipments/:id` - Atualizar equipamento
 - `DELETE /api/equipments/:id` - Deletar equipamento
+- `POST /api/equipments/:id/track-whatsapp` - Rastrear clique no WhatsApp
+- `POST /api/equipments/:id/mark-lead` - Marcar lead qualificado
 
 ### Aluguéis
 
@@ -164,6 +170,8 @@ Acesse: `http://localhost:3000/api/docs`
 - Vinculado a uma empresa
 - Roles: ADMIN | COMPANY
 - Requer verificação de email para login
+- **plan**: Plano do usuário ('free' ou 'lojista')
+- **maxAds**: Limite de anúncios ativos (3 para free, ilimitado para lojista)
 
 ### Company
 - Empresa cadastrada
@@ -174,6 +182,10 @@ Acesse: `http://localhost:3000/api/docs`
 - Equipamento disponível para aluguel
 - Pertence a uma empresa
 - Pode ter múltiplas imagens
+- **isPremium**: Se o anúncio é premium
+- **views**: Contador de visualizações
+- **whatsappClicks**: Contador de cliques no WhatsApp
+- **qualifiedLeads**: Contador de leads qualificados
 
 ### Rental
 - Solicitação de aluguel
