@@ -7,7 +7,7 @@ export class MachinesService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, userName: string, dto: CreateMachineDto) {
-    return this.prisma.machine.create({
+    const machine = await this.prisma.machine.create({
       data: {
         ...dto,
         ownerId: userId,
@@ -19,17 +19,26 @@ export class MachinesService {
             id: true,
             name: true,
             email: true,
+            isVerifiedSeller: true,
           },
         },
       },
     });
+
+    return {
+      ...machine,
+      isVerifiedSeller: machine.owner.isVerifiedSeller,
+    };
   }
 
   async findAll(filters: MachineFiltersDto) {
     const { page = 1, limit = 20, search, ...rest } = filters;
     const skip = (page - 1) * limit;
 
-    const where: any = { available: true };
+    const where: any = { 
+      available: true,
+      status: 'ACTIVE',
+    };
 
     if (search) {
       where.OR = [
@@ -85,6 +94,7 @@ export class MachinesService {
             select: {
               id: true,
               name: true,
+              isVerifiedSeller: true,
             },
           },
         },
@@ -94,7 +104,10 @@ export class MachinesService {
     ]);
 
     return {
-      data: machines,
+      data: machines.map(m => ({
+        ...m,
+        isVerifiedSeller: m.owner.isVerifiedSeller,
+      })),
       meta: {
         total,
         page,
@@ -113,6 +126,7 @@ export class MachinesService {
             id: true,
             name: true,
             email: true,
+            isVerifiedSeller: true,
           },
         },
       },
@@ -122,22 +136,31 @@ export class MachinesService {
       throw new NotFoundException('Máquina não encontrada');
     }
 
-    return machine;
+    return {
+      ...machine,
+      isVerifiedSeller: machine.owner.isVerifiedSeller,
+    };
   }
 
   async findMyMachines(userId: string) {
-    return this.prisma.machine.findMany({
+    const machines = await this.prisma.machine.findMany({
       where: { ownerId: userId },
       include: {
         owner: {
           select: {
             id: true,
             name: true,
+            isVerifiedSeller: true,
           },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return machines.map(m => ({
+      ...m,
+      isVerifiedSeller: m.owner.isVerifiedSeller,
+    }));
   }
 
   async incrementView(id: string) {
@@ -151,19 +174,19 @@ export class MachinesService {
   }
 
   async update(id: string, userId: string, dto: UpdateMachineDto) {
-    const machine = await this.prisma.machine.findUnique({
+    const existing = await this.prisma.machine.findUnique({
       where: { id },
     });
 
-    if (!machine) {
+    if (!existing) {
       throw new NotFoundException('Máquina não encontrada');
     }
 
-    if (machine.ownerId !== userId) {
+    if (existing.ownerId !== userId) {
       throw new ForbiddenException('Você só pode atualizar suas próprias máquinas');
     }
 
-    return this.prisma.machine.update({
+    const updated = await this.prisma.machine.update({
       where: { id },
       data: dto,
       include: {
@@ -171,10 +194,16 @@ export class MachinesService {
           select: {
             id: true,
             name: true,
+            isVerifiedSeller: true,
           },
         },
       },
     });
+
+    return {
+      ...updated,
+      isVerifiedSeller: updated.owner.isVerifiedSeller,
+    };
   }
 
   async remove(id: string, userId: string) {

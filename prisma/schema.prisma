@@ -72,15 +72,17 @@ model Company {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  password      String
-  phone         String?
-  role          UserRole @default(COMPANY)
-  companyId     String?
-  emailVerified Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id               String   @id @default(uuid())
+  name             String
+  email            String   @unique
+  password         String
+  phone            String?
+  role             UserRole @default(COMPANY)
+  companyId        String?
+  emailVerified    Boolean  @default(false)
+  isBanned         Boolean  @default(false)
+  isVerifiedSeller Boolean  @default(false)
+  createdAt        DateTime @default(now())
 
   company                  Company?                   @relation(fields: [companyId], references: [id])
   passwordResetTokens      PasswordResetToken[]
@@ -253,6 +255,8 @@ model Machine {
   ownerPhone      String?
   isVerifiedSeller Boolean       @default(false)
   available       Boolean         @default(true)
+  status          String          @default("ACTIVE")
+  isFeatured      Boolean         @default(false)
   views           Int             @default(0)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -299,4 +303,25 @@ model Proposal {
   @@index([receiverId])
   @@index([status])
   @@map("proposals")
+}
+
+model SiteSetting {
+  id              String   @id @default(uuid())
+  siteName        String   @default("Mercado Máquina")
+  homeTitle       String?
+  homeDescription String?  @db.Text
+  updatedAt       DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model Banner {
+  id         String   @id @default(uuid())
+  imageUrl   String
+  link       String?
+  active     Boolean  @default(true)
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@map("banners")
 }
