@@ -6,6 +6,7 @@ export const RegisterSchema = z.object({
   companyName: z.string().min(2),
   name: z.string().min(2).optional(),
   companyDocument: z.string().min(11).optional(),
+  phone: z.string().regex(/^\d{10,11}$/, 'Telefone inválido (formato: 51999887766)'),
 });
 
 export const LoginSchema = z.object({

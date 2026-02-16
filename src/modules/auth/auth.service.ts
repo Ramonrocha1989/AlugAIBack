@@ -49,6 +49,7 @@ export class AuthService {
         name: dto.name || dto.email.split('@')[0],
         email: dto.email,
         password: hashedPassword,
+        phone: `55${dto.phone}`,
         companyId: company.id,
         role: 'COMPANY',
       },
