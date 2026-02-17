@@ -25,7 +25,7 @@ export class PlansService {
     {
       id: 'lojista',
       name: 'Lojista',
-      price: 299,
+      price: 4,
       maxAds: -1,
       features: [
         'Anúncios ilimitados',
