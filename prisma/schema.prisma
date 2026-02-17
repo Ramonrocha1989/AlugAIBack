@@ -83,6 +83,7 @@ model User {
   isBanned         Boolean  @default(false)
   isVerifiedSeller Boolean  @default(false)
   plan             String   @default("free")
+  planExpiresAt    DateTime?
   maxAds           Int      @default(3)
   createdAt        DateTime @default(now())
 
