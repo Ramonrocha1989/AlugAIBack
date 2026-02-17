@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { MachinesService } from './machines.service';
 import {
   CreateMachineDto,
@@ -10,6 +11,7 @@ import {
   MachineFiltersSchema,
 } from './dto/machine.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { SanitizePipe } from '../../common/pipes/sanitize.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, Public } from '../auth/decorators/auth.decorators';
 
@@ -25,7 +27,7 @@ export class MachinesController {
   @ApiResponse({ status: 201, description: 'Máquina criada com sucesso' })
   async create(
     @CurrentUser() user: any,
-    @Body(new ZodValidationPipe(CreateMachineSchema)) dto: CreateMachineDto,
+    @Body(new SanitizePipe(), new ZodValidationPipe(CreateMachineSchema)) dto: CreateMachineDto,
   ) {
     return this.machinesService.create(user.id, user.name, dto);
   }
@@ -76,6 +78,7 @@ export class MachinesController {
   }
 
   @Post(':id/track-whatsapp')
+  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 por hora
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Track WhatsApp click' })
@@ -85,6 +88,7 @@ export class MachinesController {
   }
 
   @Post(':id/mark-lead')
+  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 por hora
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark qualified lead' })
@@ -103,7 +107,7 @@ export class MachinesController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: any,
-    @Body(new ZodValidationPipe(UpdateMachineSchema)) dto: UpdateMachineDto,
+    @Body(new SanitizePipe(), new ZodValidationPipe(UpdateMachineSchema)) dto: UpdateMachineDto,
   ) {
     return this.machinesService.update(id, user.id, dto);
   }

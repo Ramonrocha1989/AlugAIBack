@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { EquipmentsModule } from './modules/equipments/equipments.module';
@@ -17,6 +18,10 @@ import { PrismaService } from './common/prisma.service';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 1 minuto
+      limit: 100, // 100 requisições por minuto
+    }]),
     AuthModule,
     CompaniesModule,
     EquipmentsModule,
@@ -35,6 +40,10 @@ import { PrismaService } from './common/prisma.service';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })
