@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { Public } from '../auth/decorators/auth.decorators';
 import { WebhooksService } from './webhooks.service';
 
-@Controller('api/webhooks')
+@Controller('webhooks')
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 
