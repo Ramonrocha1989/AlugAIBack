@@ -13,22 +13,26 @@ export class WebhooksService {
   }
 
   async handleMercadoPagoWebhook(body: any) {
-    console.log('Webhook recebido:', JSON.stringify(body, null, 2));
+    console.log('📥 Webhook recebido:', JSON.stringify(body, null, 2));
 
     if (body.type === 'payment') {
       const paymentId = body.data.id;
+      console.log('💳 Payment ID:', paymentId);
       
       try {
         const payment = new Payment(this.client);
         const paymentData = await payment.get({ id: paymentId });
 
-        console.log('Dados do pagamento:', JSON.stringify(paymentData, null, 2));
+        console.log('📊 Status do pagamento:', paymentData.status);
+        console.log('🔗 External Reference:', paymentData.external_reference);
 
         if (paymentData.status === 'approved') {
           const externalReference = paymentData.external_reference;
           
           if (externalReference) {
             const [userId, planType] = externalReference.split('-');
+            console.log('👤 User ID:', userId);
+            console.log('📦 Plan Type:', planType);
             
             await this.prisma.user.update({
               where: { id: userId },
@@ -39,13 +43,18 @@ export class WebhooksService {
             });
             
             console.log('✅ Plano ativado para usuário:', userId);
+          } else {
+            console.log('⚠️ External reference vazio');
           }
+        } else {
+          console.log('⏭️ Pagamento não aprovado, status:', paymentData.status);
         }
       } catch (error: any) {
-        console.error('Erro ao processar pagamento:', error.message);
-        // Não lança erro para não retornar 500 ao Mercado Pago
-        // Isso evita que o webhook seja reenviado indefinidamente
+        console.error('❌ Erro ao processar pagamento:', error.message);
+        console.error('Stack:', error.stack);
       }
+    } else {
+      console.log('⏭️ Tipo de webhook ignorado:', body.type);
     }
   }
 }
