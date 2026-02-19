@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { PrismaService } from '../../common/prisma.service';
 
 @Injectable()
 export class WebhooksService {
+  private readonly logger = new Logger(WebhooksService.name);
   private client: MercadoPagoConfig;
 
   constructor(private prisma: PrismaService) {
@@ -13,50 +14,52 @@ export class WebhooksService {
   }
 
   async handleMercadoPagoWebhook(body: any) {
-    console.log('📥 Webhook recebido:', JSON.stringify(body, null, 2));
+    if (body.type !== 'payment') {
+      return;
+    }
 
-    if (body.type === 'payment') {
-      const paymentId = body.data.id;
-      console.log('💳 Payment ID:', paymentId);
-      
-      try {
-        const payment = new Payment(this.client);
-        const paymentData = await payment.get({ id: paymentId });
+    const paymentId = body.data?.id;
+    
+    if (!paymentId) {
+      return;
+    }
 
-        console.log('📊 Status do pagamento:', paymentData.status);
-        console.log('🔗 External Reference:', paymentData.external_reference);
+    try {
+      const payment = new Payment(this.client);
+      const paymentData = await payment.get({ id: paymentId });
 
-        if (paymentData.status === 'approved') {
-          const externalReference = paymentData.external_reference;
-          
-          if (externalReference) {
-            const parts = externalReference.split('-');
-            const planType = parts[parts.length - 1];
-            const userId = parts.slice(0, -1).join('-');
-            console.log('👤 User ID:', userId);
-            console.log('📦 Plan Type:', planType);
-            
-            await this.prisma.user.update({
-              where: { id: userId },
-              data: {
-                plan: planType,
-                planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              },
-            });
-            
-            console.log('✅ Plano ativado para usuário:', userId);
-          } else {
-            console.log('⚠️ External reference vazio');
-          }
-        } else {
-          console.log('⏭️ Pagamento não aprovado, status:', paymentData.status);
-        }
-      } catch (error: any) {
-        console.error('❌ Erro ao processar pagamento:', error.message);
-        console.error('Stack:', error.stack);
+      if (paymentData.status !== 'approved') {
+        return;
       }
-    } else {
-      console.log('⏭️ Tipo de webhook ignorado:', body.type);
+
+      const externalReference = paymentData.external_reference;
+      
+      if (!externalReference) {
+        this.logger.warn(`Pagamento ${paymentId} sem external_reference`);
+        return;
+      }
+
+      const parts = externalReference.split('-');
+      const planType = parts[parts.length - 1];
+      const userId = parts.slice(0, -1).join('-');
+      
+      if (!userId || !planType) {
+        this.logger.error(`External reference inválido: ${externalReference}`);
+        return;
+      }
+
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          plan: planType,
+          planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+      
+      this.logger.log(`✅ Plano ${planType} ativado para usuário ${userId}`);
+
+    } catch (error: any) {
+      this.logger.error(`Erro ao processar pagamento ${paymentId}: ${error.message}`);
     }
   }
 }
