@@ -13,19 +13,4 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
     });
   }
-
-  async getAllRentals() {
-    return this.prisma.rental.findMany({
-      include: {
-        equipment: {
-          include: {
-            company: true,
-          },
-        },
-        renterCompany: true,
-        payment: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
 }

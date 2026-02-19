@@ -3,8 +3,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { CompaniesModule } from './modules/companies/companies.module';
-import { EquipmentsModule } from './modules/equipments/equipments.module';
-import { RentalsModule } from './modules/rentals/rentals.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { MachinesModule } from './modules/machines/machines.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
@@ -25,8 +23,6 @@ import { PrismaService } from './common/prisma.service';
     }]),
     AuthModule,
     CompaniesModule,
-    EquipmentsModule,
-    RentalsModule,
     AdminModule,
     MachinesModule,
     FavoritesModule,

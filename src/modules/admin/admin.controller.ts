@@ -20,13 +20,4 @@ export class AdminController {
   async getAllUsers() {
     return this.adminService.getAllUsers();
   }
-
-  @Get('rentals')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get all rentals (Admin only)' })
-  @ApiResponse({ status: 200, description: 'Rentals retrieved successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  async getAllRentals() {
-    return this.adminService.getAllRentals();
-  }
 }

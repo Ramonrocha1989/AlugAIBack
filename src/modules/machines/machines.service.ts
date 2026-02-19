@@ -32,7 +32,7 @@ export class MachinesService {
   }
 
   async findAll(filters: MachineFiltersDto) {
-    const { page = 1, limit = 20, search, ...rest } = filters;
+    const { page = 1, limit = 20, search, sortBy = 'recent', ...rest } = filters;
     const skip = (page - 1) * limit;
 
     const where: any = { 
@@ -84,11 +84,30 @@ export class MachinesService {
     if (rest.acceptsGrains !== undefined) where.acceptsGrains = rest.acceptsGrains;
     if (rest.isVerifiedSeller !== undefined) where.isVerifiedSeller = rest.isVerifiedSeller;
 
-    const [machines, total] = await Promise.all([
+    let orderBy: any;
+    
+    switch (sortBy) {
+      case 'price_asc':
+        orderBy = { price: 'asc' };
+        break;
+      case 'price_desc':
+        orderBy = { price: 'desc' };
+        break;
+      case 'engine_hours_asc':
+        orderBy = { engineHours: 'asc' };
+        break;
+      case 'year_desc':
+        orderBy = { yearModel: 'desc' };
+        break;
+      case 'created_desc':
+      case 'recent':
+      default:
+        orderBy = { createdAt: 'desc' };
+    }
+
+    const [allMachines, total] = await Promise.all([
       this.prisma.machine.findMany({
         where,
-        skip,
-        take: limit,
         include: {
           owner: {
             select: {
@@ -99,10 +118,26 @@ export class MachinesService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.machine.count({ where }),
     ]);
+
+    let sortedMachines = allMachines;
+    
+    if (sortBy === 'engine_hours_asc') {
+      sortedMachines = allMachines.sort((a, b) => {
+        if (a.engineHours === null) return 1;
+        if (b.engineHours === null) return -1;
+        return a.engineHours - b.engineHours;
+      });
+    } else if (sortBy === 'price_asc') {
+      sortedMachines = allMachines.sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (sortBy === 'year_desc') {
+      sortedMachines = allMachines.sort((a, b) => b.yearModel - a.yearModel);
+    }
+
+    const machines = sortedMachines.slice(skip, skip + limit);
 
     return {
       data: machines.map(m => {
@@ -255,6 +290,22 @@ export class MachinesService {
       ...updated,
       isVerifiedSeller: updated.owner.isVerifiedSeller,
     };
+  }
+
+  private getOrderBy(sortBy: string) {
+    switch (sortBy) {
+      case 'price_asc':
+        return { price: 'asc' as const };
+      case 'price_desc':
+        return { price: 'desc' as const };
+      case 'engine_hours_asc':
+        return { engineHours: 'asc' as const };
+      case 'year_desc':
+        return { yearModel: 'desc' as const };
+      case 'recent':
+      default:
+        return { createdAt: 'desc' as const };
+    }
   }
 
   async remove(id: string, userId: string) {

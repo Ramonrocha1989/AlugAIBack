@@ -17,7 +17,6 @@ export class CompaniesService {
             role: true,
           },
         },
-        equipments: true,
       },
     });
 
