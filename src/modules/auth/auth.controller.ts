@@ -1,12 +1,13 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, RegisterSchema, LoginSchema } from './dto/auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto, ForgotPasswordSchema, ResetPasswordSchema } from './dto/password-reset.dto';
 import { VerifyEmailDto, VerifyEmailSchema } from './dto/verify-email.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { Public } from './decorators/auth.decorators';
+import { Public, CurrentUser } from './decorators/auth.decorators';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -61,5 +62,23 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async verifyEmail(@Body(new ZodValidationPipe(VerifyEmailSchema)) dto: VerifyEmailDto) {
     return this.authService.verifyEmail(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user info with plan limits' })
+  @ApiResponse({ status: 200, description: 'User info retrieved' })
+  async getMe(@CurrentUser() user: any) {
+    return this.authService.getMe(user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('upgrade-plan')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Upgrade user plan' })
+  @ApiResponse({ status: 200, description: 'Plan upgraded successfully' })
+  async upgradePlan(@CurrentUser() user: any, @Body() body: { plan: string }) {
+    return this.authService.upgradePlan(user.userId, body.plan);
   }
 }

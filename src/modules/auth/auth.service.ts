@@ -215,4 +215,82 @@ export class AuthService {
 
     return { message: 'Email verificado com sucesso' };
   }
+
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        plan: true,
+        planExpiresAt: true,
+        maxAds: true,
+        maxPremiumAds: true,
+        maxFeaturedAds: true,
+        isVerifiedSeller: true,
+        emailVerified: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+            document: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const [activeAds, premiumAds, featuredAds] = await Promise.all([
+      this.prisma.machine.count({
+        where: { ownerId: userId, available: true, status: 'ACTIVE' },
+      }),
+      this.prisma.machine.count({
+        where: { ownerId: userId, isPremium: true, available: true, status: 'ACTIVE' },
+      }),
+      this.prisma.machine.count({
+        where: { ownerId: userId, isFeatured: true, available: true, status: 'ACTIVE' },
+      }),
+    ]);
+
+    return {
+      ...user,
+      usage: {
+        activeAds,
+        premiumAds,
+        featuredAds,
+      },
+    };
+  }
+
+  async upgradePlan(userId: string, plan: string) {
+    const planLimits = {
+      free: { maxAds: 3, maxPremiumAds: 0, maxFeaturedAds: 0 },
+      lojista: { maxAds: 999, maxPremiumAds: 3, maxFeaturedAds: 5 },
+    };
+
+    const limits = planLimits[plan];
+    if (!limits) {
+      throw new BadRequestException('Plano inválido');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        plan,
+        ...limits,
+      },
+    });
+
+    return {
+      message: `Plano atualizado para ${plan} com sucesso`,
+      plan,
+      limits,
+    };
+  }
 }

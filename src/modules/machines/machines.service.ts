@@ -276,6 +276,15 @@ export class MachinesService {
   async update(id: string, userId: string, dto: UpdateMachineDto) {
     const existing = await this.prisma.machine.findUnique({
       where: { id },
+      include: {
+        owner: {
+          select: {
+            plan: true,
+            maxPremiumAds: true,
+            maxFeaturedAds: true,
+          },
+        },
+      },
     });
 
     if (!existing) {
@@ -284,6 +293,46 @@ export class MachinesService {
 
     if (existing.ownerId !== userId) {
       throw new ForbiddenException('Você só pode atualizar suas próprias máquinas');
+    }
+
+    if (dto.isPremium !== undefined && dto.isPremium !== existing.isPremium) {
+      if (dto.isPremium) {
+        const premiumCount = await this.prisma.machine.count({
+          where: {
+            ownerId: userId,
+            isPremium: true,
+            id: { not: id },
+            available: true,
+            status: 'ACTIVE',
+          },
+        });
+
+        if (premiumCount >= existing.owner.maxPremiumAds) {
+          throw new ForbiddenException(
+            `Limite de anúncios Premium atingido (${existing.owner.maxPremiumAds} máximo).`
+          );
+        }
+      }
+    }
+
+    if (dto.isFeatured !== undefined && dto.isFeatured !== existing.isFeatured) {
+      if (dto.isFeatured) {
+        const featuredCount = await this.prisma.machine.count({
+          where: {
+            ownerId: userId,
+            isFeatured: true,
+            id: { not: id },
+            available: true,
+            status: 'ACTIVE',
+          },
+        });
+
+        if (featuredCount >= existing.owner.maxFeaturedAds) {
+          throw new ForbiddenException(
+            `Limite de anúncios em Destaque atingido (${existing.owner.maxFeaturedAds} máximo).`
+          );
+        }
+      }
     }
 
     const updated = await this.prisma.machine.update({

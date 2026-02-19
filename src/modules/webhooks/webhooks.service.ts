@@ -48,15 +48,23 @@ export class WebhooksService {
         return;
       }
 
+      const planLimits = {
+        free: { maxAds: 3, maxPremiumAds: 0, maxFeaturedAds: 0 },
+        lojista: { maxAds: 999, maxPremiumAds: 3, maxFeaturedAds: 5 },
+      };
+
+      const limits = planLimits[planType] || planLimits.free;
+
       await this.prisma.user.update({
         where: { id: userId },
         data: {
           plan: planType,
           planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          ...limits,
         },
       });
       
-      this.logger.log(`✅ Plano ${planType} ativado para usuário ${userId}`);
+      this.logger.log(`✅ Plano ${planType} ativado para usuário ${userId} com limites: ${JSON.stringify(limits)}`);
 
     } catch (error: any) {
       this.logger.error(`Erro ao processar pagamento ${paymentId}: ${error.message}`);
