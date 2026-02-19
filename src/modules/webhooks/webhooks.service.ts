@@ -30,7 +30,9 @@ export class WebhooksService {
           const externalReference = paymentData.external_reference;
           
           if (externalReference) {
-            const [userId, planType] = externalReference.split('-');
+            const parts = externalReference.split('-');
+            const planType = parts[parts.length - 1];
+            const userId = parts.slice(0, -1).join('-');
             console.log('👤 User ID:', userId);
             console.log('📦 Plan Type:', planType);
             
