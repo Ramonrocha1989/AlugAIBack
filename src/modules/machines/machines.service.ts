@@ -7,6 +7,31 @@ export class MachinesService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, userName: string, dto: CreateMachineDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true, maxAds: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    if (user.plan === 'free') {
+      const activeAdsCount = await this.prisma.machine.count({
+        where: { 
+          ownerId: userId,
+          available: true,
+          status: 'ACTIVE'
+        },
+      });
+
+      if (activeAdsCount >= user.maxAds) {
+        throw new ForbiddenException(
+          'Limite de anúncios atingido. Faça upgrade para o plano Lojista.'
+        );
+      }
+    }
+
     const machine = await this.prisma.machine.create({
       data: {
         ...dto,
@@ -84,27 +109,6 @@ export class MachinesService {
     if (rest.acceptsGrains !== undefined) where.acceptsGrains = rest.acceptsGrains;
     if (rest.isVerifiedSeller !== undefined) where.isVerifiedSeller = rest.isVerifiedSeller;
 
-    let orderBy: any;
-    
-    switch (sortBy) {
-      case 'price_asc':
-        orderBy = { price: 'asc' };
-        break;
-      case 'price_desc':
-        orderBy = { price: 'desc' };
-        break;
-      case 'engine_hours_asc':
-        orderBy = { engineHours: 'asc' };
-        break;
-      case 'year_desc':
-        orderBy = { yearModel: 'desc' };
-        break;
-      case 'created_desc':
-      case 'recent':
-      default:
-        orderBy = { createdAt: 'desc' };
-    }
-
     const [allMachines, total] = await Promise.all([
       this.prisma.machine.findMany({
         where,
@@ -118,24 +122,34 @@ export class MachinesService {
             },
           },
         },
-        orderBy,
       }),
       this.prisma.machine.count({ where }),
     ]);
 
-    let sortedMachines = allMachines;
-    
-    if (sortBy === 'engine_hours_asc') {
-      sortedMachines = allMachines.sort((a, b) => {
+    const sortedMachines = allMachines.sort((a, b) => {
+      if (a.isPremium !== b.isPremium) return b.isPremium ? 1 : -1;
+      if (a.isFeatured !== b.isFeatured) return b.isFeatured ? 1 : -1;
+      
+      const planA = a.owner.plan || 'free';
+      const planB = b.owner.plan || 'free';
+      if (planA !== planB) {
+        return planA === 'lojista' ? -1 : 1;
+      }
+      
+      if (sortBy === 'engine_hours_asc') {
         if (a.engineHours === null) return 1;
         if (b.engineHours === null) return -1;
         return a.engineHours - b.engineHours;
-      });
-    } else if (sortBy === 'price_asc') {
-      sortedMachines = allMachines.sort((a, b) => Number(a.price) - Number(b.price));
-    } else if (sortBy === 'year_desc') {
-      sortedMachines = allMachines.sort((a, b) => b.yearModel - a.yearModel);
-    }
+      } else if (sortBy === 'price_asc') {
+        return Number(a.price) - Number(b.price);
+      } else if (sortBy === 'price_desc') {
+        return Number(b.price) - Number(a.price);
+      } else if (sortBy === 'year_desc') {
+        return b.yearModel - a.yearModel;
+      }
+      
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
 
     const machines = sortedMachines.slice(skip, skip + limit);
 
@@ -290,22 +304,6 @@ export class MachinesService {
       ...updated,
       isVerifiedSeller: updated.owner.isVerifiedSeller,
     };
-  }
-
-  private getOrderBy(sortBy: string) {
-    switch (sortBy) {
-      case 'price_asc':
-        return { price: 'asc' as const };
-      case 'price_desc':
-        return { price: 'desc' as const };
-      case 'engine_hours_asc':
-        return { engineHours: 'asc' as const };
-      case 'year_desc':
-        return { yearModel: 'desc' as const };
-      case 'recent':
-      default:
-        return { createdAt: 'desc' as const };
-    }
   }
 
   async remove(id: string, userId: string) {

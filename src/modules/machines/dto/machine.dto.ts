@@ -53,7 +53,12 @@ export const CreateMachineSchema = z.object({
   ownerPhone: z.string().regex(/^55\d{10,11}$/, 'Telefone inválido (formato: 5551999887766)').optional(),
 });
 
-export const UpdateMachineSchema = CreateMachineSchema.partial();
+export const UpdateMachineSchema = CreateMachineSchema.partial().extend({
+  isPremium: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  available: z.boolean().optional(),
+  status: z.enum(['ACTIVE', 'SOLD', 'INACTIVE']).optional(),
+});
 
 export const MachineFiltersSchema = z.object({
   search: z.string().optional(),
