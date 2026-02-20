@@ -44,7 +44,7 @@ async function bootstrap() {
     },
   }));
 
-  // CSRF Protection (exceto webhooks e GET)
+  // CSRF Protection (exceto webhooks, GET e auth público)
   app.use(csurf({
     cookie: {
       httpOnly: true,
@@ -56,6 +56,10 @@ async function bootstrap() {
       // Ignorar webhook do Mercado Pago
       if (req.path.includes('/webhooks/')) {
         return 'webhook-bypass';
+      }
+      // Ignorar login e register (endpoints públicos)
+      if (req.path.includes('/auth/login') || req.path.includes('/auth/register')) {
+        return 'auth-bypass';
       }
       return req.headers['x-csrf-token'] || req.body?._csrf;
     },
