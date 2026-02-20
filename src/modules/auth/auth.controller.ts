@@ -35,12 +35,12 @@ export class AuthController {
   ) {
     const result = await this.authService.register(dto);
     
-    // Definir cookie httpOnly
+    // Definir cookie httpOnly para cross-site
     response.cookie('token', result.token, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
     });
     
@@ -70,12 +70,12 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
     
-    // Definir cookie httpOnly
+    // Definir cookie httpOnly para cross-site
     response.cookie('token', result.token, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
     });
     
@@ -100,8 +100,8 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('token', {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       path: '/',
     });
     
