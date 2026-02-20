@@ -58,17 +58,15 @@ export class AuthService {
       },
     });
 
-    // Gerar token de verificação
     const verificationToken = randomBytes(32).toString('hex');
     await this.prisma.emailVerificationToken.create({
       data: {
         userId: user.id,
         token: verificationToken,
-        expiresAt: new Date(Date.now() + 86400000), // 24 horas
+        expiresAt: new Date(Date.now() + 86400000),
       },
     });
 
-    // Enviar email de verificação
     await this.emailService.sendVerificationEmail(user.email, verificationToken);
 
     const token = this.generateToken(user.id, user.email, user.role);
@@ -78,8 +76,15 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
-        company: user.company,
+        plan: user.plan,
+        emailVerified: user.emailVerified,
+        company: user.company ? {
+          id: user.company.id,
+          name: user.company.name,
+          document: user.company.document,
+        } : null,
       },
       token,
       message: 'Cadastro realizado! Verifique seu email para ativar sua conta.',
@@ -108,13 +113,44 @@ export class AuthService {
 
     const token = this.generateToken(user.id, user.email, user.role);
 
+    // Buscar contadores de uso
+    const [activeAds, premiumAds, featuredAds] = await Promise.all([
+      this.prisma.machine.count({
+        where: { ownerId: user.id, available: true, status: 'ACTIVE' },
+      }),
+      this.prisma.machine.count({
+        where: { ownerId: user.id, isPremium: true, available: true, status: 'ACTIVE' },
+      }),
+      this.prisma.machine.count({
+        where: { ownerId: user.id, isFeatured: true, available: true, status: 'ACTIVE' },
+      }),
+    ]);
+
+    // Retornar TODOS os dados (filtragem será feita no controller)
     return {
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
-        company: user.company,
+        plan: user.plan,
+        planExpiresAt: user.planExpiresAt,
+        maxAds: user.maxAds,
+        maxPremiumAds: user.maxPremiumAds,
+        maxFeaturedAds: user.maxFeaturedAds,
+        isVerifiedSeller: user.isVerifiedSeller,
+        emailVerified: user.emailVerified,
+        company: user.company ? {
+          id: user.company.id,
+          name: user.company.name,
+          document: user.company.document,
+        } : null,
+        usage: {
+          activeAds,
+          premiumAds,
+          featuredAds,
+        },
       },
       token,
     };
@@ -133,16 +169,13 @@ export class AuthService {
       where: { email: dto.email },
     });
 
-    // Sempre retorna sucesso (segurança)
     if (!user) {
       return { message: 'Email de recuperação enviado com sucesso' };
     }
 
-    // Gerar token único
     const token = randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+    const expiresAt = new Date(Date.now() + 3600000);
 
-    // Salvar token no banco
     await this.prisma.passwordResetToken.create({
       data: {
         userId: user.id,
@@ -151,14 +184,12 @@ export class AuthService {
       },
     });
 
-    // Enviar email
     await this.emailService.sendPasswordResetEmail(user.email, token);
 
     return { message: 'Email de recuperação enviado com sucesso' };
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    // Buscar token válido
     const resetToken = await this.prisma.passwordResetToken.findFirst({
       where: {
         token: dto.token,
@@ -172,16 +203,13 @@ export class AuthService {
       throw new BadRequestException('Token inválido ou expirado');
     }
 
-    // Hash da nova senha
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Atualizar senha do usuário
     await this.prisma.user.update({
       where: { id: resetToken.userId },
       data: { password: hashedPassword },
     });
 
-    // Marcar token como usado
     await this.prisma.passwordResetToken.update({
       where: { id: resetToken.id },
       data: { usedAt: new Date() },

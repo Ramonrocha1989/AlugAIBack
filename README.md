@@ -238,12 +238,27 @@ const { data: equipments } = useQuery({
 ## Segurança
 
 - Senhas hasheadas com bcrypt
-- JWT para autenticação stateless
-- Verificação de email obrigatória
+- JWT em cookies httpOnly (proteção XSS)
+- CSRF protection com tokens únicos
+- Rate limiting (5 tentativas de login a cada 15min)
 - Guards para proteção de rotas
 - Validação de propriedade em operações sensíveis
-- CORS configurado
+- CORS configurado com credentials
 - Tokens de uso único com expiração
+- Helmet com HSTS habilitado
+- Validação global com whitelist
+- Security headers (CSP, X-Frame-Options, etc)
+- **Proteção de dados sensíveis (LGPD/GDPR compliant)**
+
+### Endpoints de Segurança
+
+- `GET /api/auth/csrf-token` - Obter token CSRF
+- `POST /api/auth/logout` - Logout com limpeza de cookie
+- `GET /api/auth/me` - Perfil completo (incluindo dados sensíveis)
+
+**Documentação completa:**
+- [SECURITY_IMPLEMENTATION.md](./SECURITY_IMPLEMENTATION.md)
+- [SENSITIVE_DATA_PROTECTION.md](./SENSITIVE_DATA_PROTECTION.md) - Proteção LGPD/GDPR
 
 ## Próximos Passos (Pós-MVP)
 

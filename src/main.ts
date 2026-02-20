@@ -1,11 +1,16 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import csurf from 'csurf';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cookie Parser (ANTES do CSRF)
+  app.use(cookieParser());
 
   // Security Headers
   app.use(helmet({
@@ -18,9 +23,31 @@ async function bootstrap() {
       },
     },
     crossOriginEmbedderPolicy: false,
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
   }));
 
-  // CORS para Next.js
+  // CSRF Protection (exceto webhooks e GET)
+  app.use(csurf({
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    },
+    ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+    value: (req) => {
+      // Ignorar webhook do Mercado Pago
+      if (req.path.includes('/webhooks/')) {
+        return 'webhook-bypass';
+      }
+      return req.headers['x-csrf-token'] || req.body?._csrf;
+    },
+  }));
+
+  // CORS para Next.js com credentials
   app.enableCors({
     origin: [
       'https://mercadomaquina.online',
@@ -30,7 +57,16 @@ async function bootstrap() {
       'http://localhost:3001',
     ],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   });
+
+  // Global Validation Pipe
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
 
   // Global prefix
   app.setGlobalPrefix('api');
@@ -56,6 +92,7 @@ async function bootstrap() {
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 Swagger documentation: http://localhost:${port}/api/docs`);
+  console.log(`🔒 Security: Cookies + CSRF + Rate Limiting enabled`);
 }
 
 bootstrap();
