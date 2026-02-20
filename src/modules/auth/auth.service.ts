@@ -69,7 +69,9 @@ export class AuthService {
 
     await this.emailService.sendVerificationEmail(user.email, verificationToken);
 
-    const token = this.generateToken(user.id, user.email, user.role);
+    const token = this.generateToken(user.id, user.email, user.role, '7d');
+    const refreshToken = this.generateRefreshToken();
+    await this.saveRefreshToken(user.id, refreshToken);
 
     return {
       user: {
@@ -86,7 +88,8 @@ export class AuthService {
           document: user.company.document,
         } : null,
       },
-      token,
+      accessToken: token,
+      refreshToken,
       message: 'Cadastro realizado! Verifique seu email para ativar sua conta.',
     };
   }
@@ -111,7 +114,9 @@ export class AuthService {
       throw new UnauthorizedException('Email não verificado. Verifique sua caixa de entrada.');
     }
 
-    const token = this.generateToken(user.id, user.email, user.role);
+    const accessToken = this.generateToken(user.id, user.email, user.role);
+    const refreshToken = this.generateRefreshToken();
+    await this.saveRefreshToken(user.id, refreshToken);
 
     // Buscar contadores de uso
     const [activeAds, premiumAds, featuredAds] = await Promise.all([
@@ -126,7 +131,6 @@ export class AuthService {
       }),
     ]);
 
-    // Retornar TODOS os dados (filtragem será feita no controller)
     return {
       user: {
         id: user.id,
@@ -152,15 +156,29 @@ export class AuthService {
           featuredAds,
         },
       },
-      token,
+      accessToken,
+      refreshToken,
     };
   }
 
-  private generateToken(userId: string, email: string, role: string) {
+  private generateToken(userId: string, email: string, role: string, expiresIn = '15m') {
     return this.jwtService.sign({
       sub: userId,
       email,
       role,
+    }, { expiresIn });
+  }
+
+  private generateRefreshToken(): string {
+    return randomBytes(64).toString('hex');
+  }
+
+  private async saveRefreshToken(userId: string, token: string) {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 dias
+
+    return this.prisma.refreshToken.create({
+      data: { token, userId, expiresAt },
     });
   }
 
@@ -320,5 +338,71 @@ export class AuthService {
       plan,
       limits,
     };
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    const storedToken = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+      include: { user: { include: { company: true } } },
+    });
+
+    if (!storedToken || storedToken.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token inválido ou expirado');
+    }
+
+    const accessToken = this.generateToken(
+      storedToken.user.id,
+      storedToken.user.email,
+      storedToken.user.role,
+    );
+
+    const [activeAds, premiumAds, featuredAds] = await Promise.all([
+      this.prisma.machine.count({
+        where: { ownerId: storedToken.user.id, available: true, status: 'ACTIVE' },
+      }),
+      this.prisma.machine.count({
+        where: { ownerId: storedToken.user.id, isPremium: true, available: true, status: 'ACTIVE' },
+      }),
+      this.prisma.machine.count({
+        where: { ownerId: storedToken.user.id, isFeatured: true, available: true, status: 'ACTIVE' },
+      }),
+    ]);
+
+    return {
+      accessToken,
+      user: {
+        id: storedToken.user.id,
+        name: storedToken.user.name,
+        email: storedToken.user.email,
+        phone: storedToken.user.phone,
+        role: storedToken.user.role,
+        plan: storedToken.user.plan,
+        planExpiresAt: storedToken.user.planExpiresAt,
+        maxAds: storedToken.user.maxAds,
+        maxPremiumAds: storedToken.user.maxPremiumAds,
+        maxFeaturedAds: storedToken.user.maxFeaturedAds,
+        isVerifiedSeller: storedToken.user.isVerifiedSeller,
+        emailVerified: storedToken.user.emailVerified,
+        company: storedToken.user.company ? {
+          id: storedToken.user.company.id,
+          name: storedToken.user.company.name,
+          document: storedToken.user.company.document,
+        } : null,
+        usage: {
+          activeAds,
+          premiumAds,
+          featuredAds,
+        },
+      },
+    };
+  }
+
+  async logout(userId: string, refreshToken?: string) {
+    await this.prisma.refreshToken.deleteMany({
+      where: {
+        userId,
+        ...(refreshToken && { token: refreshToken }),
+      },
+    });
   }
 }

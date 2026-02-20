@@ -42,7 +42,8 @@ export class AuthController {
         ...userWithoutSensitive,
         company: company ? companyWithoutDocument : null,
       },
-      token: result.token,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       message: result.message,
     };
   }
@@ -67,7 +68,8 @@ export class AuthController {
         ...userWithoutSensitive,
         company: company ? companyWithoutDocument : null,
       },
-      token: result.token,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
     };
   }
 
@@ -77,8 +79,30 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout() {
+  async logout(@CurrentUser() user: any, @Body() body: { refreshToken?: string }) {
+    await this.authService.logout(user.userId, body.refreshToken);
     return { message: 'Logout realizado com sucesso' };
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ status: 200, description: 'Token refreshed' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  async refresh(@Body() body: { refreshToken: string }) {
+    const result = await this.authService.refreshAccessToken(body.refreshToken);
+    
+    const { phone, company, ...userWithoutSensitive } = result.user;
+    const { document, ...companyWithoutDocument } = company || {};
+    
+    return {
+      accessToken: result.accessToken,
+      user: {
+        ...userWithoutSensitive,
+        company: company ? companyWithoutDocument : null,
+      },
+    };
   }
 
   @Public()

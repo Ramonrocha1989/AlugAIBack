@@ -77,6 +77,7 @@ model User {
   company                  Company?                   @relation(fields: [companyId], references: [id])
   passwordResetTokens      PasswordResetToken[]
   emailVerificationTokens  EmailVerificationToken[]
+  refreshTokens            RefreshToken[]
   machines                 Machine[]
   favorites                Favorite[]
   reviewsGiven             Review[]                   @relation("ReviewerUser")
@@ -117,6 +118,21 @@ model EmailVerificationToken {
   @@index([token])
   @@index([expiresAt])
   @@map("email_verification_tokens")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 model Favorite {
