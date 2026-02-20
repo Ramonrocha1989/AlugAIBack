@@ -24,16 +24,27 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 20, ttl: 3600000 } })
+  @Throttle({ default: { limit: 20, ttl: 3600000 } }) // 20 registros por hora
   @Post('register')
   @ApiOperation({ summary: 'Register new company and user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'Email or document already exists' })
   async register(
     @Body(new ZodValidationPipe(RegisterSchema)) dto: RegisterDto,
+    @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.register(dto);
     
+    // Definir cookie httpOnly para cross-site
+    response.cookie('token', result.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    
+    // Remover dados sensíveis antes de retornar
     const { phone, company, ...userWithoutSensitive } = result.user;
     const { document, ...companyWithoutDocument } = company || {};
     
@@ -42,13 +53,12 @@ export class AuthController {
         ...userWithoutSensitive,
         company: company ? companyWithoutDocument : null,
       },
-      token: result.token,
       message: result.message,
     };
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 tentativas a cada 15 minutos
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
@@ -56,9 +66,20 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body(new ZodValidationPipe(LoginSchema)) dto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.login(dto);
     
+    // Definir cookie httpOnly para cross-site
+    response.cookie('token', result.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+    
+    // Remover dados sensíveis antes de retornar
     const { phone, company, ...userWithoutSensitive } = result.user;
     const { document, ...companyWithoutDocument } = company || {};
     
@@ -67,7 +88,6 @@ export class AuthController {
         ...userWithoutSensitive,
         company: company ? companyWithoutDocument : null,
       },
-      token: result.token,
     };
   }
 
@@ -77,7 +97,14 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout() {
+  async logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+    });
+    
     return { message: 'Logout realizado com sucesso' };
   }
 
