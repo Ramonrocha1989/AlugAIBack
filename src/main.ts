@@ -12,6 +12,20 @@ async function bootstrap() {
   // Cookie Parser (ANTES do CSRF)
   app.use(cookieParser());
 
+  // CORS PRIMEIRO (antes de tudo)
+  app.enableCors({
+    origin: [
+      'https://mercadomaquina.online',
+      'https://www.mercadomaquina.online',
+      'https://jovial-cuchufli-4e3662.netlify.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  });
+
   // Security Headers
   app.use(helmet({
     contentSecurityPolicy: {
@@ -46,20 +60,6 @@ async function bootstrap() {
       return req.headers['x-csrf-token'] || req.body?._csrf;
     },
   }));
-
-  // CORS para Next.js com credentials
-  app.enableCors({
-    origin: [
-      'https://mercadomaquina.online',
-      'https://www.mercadomaquina.online',
-      'https://jovial-cuchufli-4e3662.netlify.app',
-      'http://localhost:3000',
-      'http://localhost:3001',
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
-  });
 
   // Global Validation Pipe
   app.useGlobalPipes(new ValidationPipe({
