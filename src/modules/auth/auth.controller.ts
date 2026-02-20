@@ -16,13 +16,11 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Public()
-  @Get('csrf-token')
-  @ApiOperation({ summary: 'Get CSRF token' })
-  @ApiResponse({ status: 200, description: 'CSRF token retrieved' })
-  getCsrfToken(@Req() req: Request) {
-    return {
-      csrfToken: req.csrfToken(),
-    };
+  @Get('health')
+  @ApiOperation({ summary: 'Health check' })
+  @ApiResponse({ status: 200, description: 'API is healthy' })
+  getHealth() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
   }
 
   @Public()

@@ -4,7 +4,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import csurf from 'csurf';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,7 +22,7 @@ async function bootstrap() {
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   // Security Headers
@@ -43,20 +42,6 @@ async function bootstrap() {
       preload: true,
     },
   }));
-
-  // CSRF Protection - ignorar login/register
-  app.use((req, res, next) => {
-    if (req.path === '/api/auth/login' || req.path === '/api/auth/register' || req.path === '/api/auth/csrf-token') {
-      return next();
-    }
-    csurf({
-      cookie: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-      },
-    })(req, res, next);
-  });
 
   // Global Validation Pipe
   app.useGlobalPipes(new ValidationPipe({
