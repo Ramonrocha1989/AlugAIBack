@@ -4,12 +4,12 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import csurf from 'csurf';
+// import csurf from 'csurf'; // Desabilitado temporariamente
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Cookie Parser (ANTES do CSRF)
+  // Cookie Parser
   app.use(cookieParser());
 
   // CORS PRIMEIRO (antes de tudo)
@@ -44,26 +44,8 @@ async function bootstrap() {
     },
   }));
 
-  // CSRF Protection (exceto webhooks, GET e auth público)
-  app.use(csurf({
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    },
-    ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
-    value: (req) => {
-      // Ignorar webhook do Mercado Pago
-      if (req.path.includes('/webhooks/')) {
-        return 'webhook-bypass';
-      }
-      // Ignorar login e register (endpoints públicos)
-      if (req.path.includes('/auth/login') || req.path.includes('/auth/register')) {
-        return 'auth-bypass';
-      }
-      return req.headers['x-csrf-token'] || req.body?._csrf;
-    },
-  }));
+  // CSRF desabilitado temporariamente para cross-site
+  // app.use(csurf({...}));
 
   // Global Validation Pipe
   app.useGlobalPipes(new ValidationPipe({
