@@ -127,15 +127,6 @@ export class MachinesService {
     ]);
 
     const sortedMachines = allMachines.sort((a, b) => {
-      if (a.isPremium !== b.isPremium) return b.isPremium ? 1 : -1;
-      if (a.isFeatured !== b.isFeatured) return b.isFeatured ? 1 : -1;
-      
-      const planA = a.owner.plan || 'free';
-      const planB = b.owner.plan || 'free';
-      if (planA !== planB) {
-        return planA === 'lojista' ? -1 : 1;
-      }
-      
       if (sortBy === 'engine_hours_asc') {
         if (a.engineHours === null) return 1;
         if (b.engineHours === null) return -1;
@@ -146,9 +137,18 @@ export class MachinesService {
         return Number(b.price) - Number(a.price);
       } else if (sortBy === 'year_desc') {
         return b.yearModel - a.yearModel;
+      } else {
+        if (a.isPremium !== b.isPremium) return b.isPremium ? 1 : -1;
+        if (a.isFeatured !== b.isFeatured) return b.isFeatured ? 1 : -1;
+        
+        const planA = a.owner.plan || 'free';
+        const planB = b.owner.plan || 'free';
+        if (planA !== planB) {
+          return planA === 'lojista' ? -1 : 1;
+        }
+        
+        return b.createdAt.getTime() - a.createdAt.getTime();
       }
-      
-      return b.createdAt.getTime() - a.createdAt.getTime();
     });
 
     const machines = sortedMachines.slice(skip, skip + limit);
