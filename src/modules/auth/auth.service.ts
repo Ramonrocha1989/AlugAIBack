@@ -405,4 +405,31 @@ export class AuthService {
       },
     });
   }
+
+  async updateProfile(userId: string, updateData: { name?: string; phone?: string }) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(updateData.name && { name: updateData.name }),
+        ...(updateData.phone && { phone: updateData.phone }),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        plan: true,
+        emailVerified: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return { message: 'Perfil atualizado com sucesso', user };
+  }
 }

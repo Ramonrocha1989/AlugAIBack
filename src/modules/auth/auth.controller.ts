@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Res, Req } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Res, Req, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, RegisterSchema, LoginSchema } from './dto/auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto, ForgotPasswordSchema, ResetPasswordSchema } from './dto/password-reset.dto';
 import { VerifyEmailDto, VerifyEmailSchema } from './dto/verify-email.dto';
+import { UpdateProfileDto, UpdateProfileSchema } from './dto/update-profile.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { Public, CurrentUser } from './decorators/auth.decorators';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -150,5 +151,17 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Plan upgraded successfully' })
   async upgradePlan(@CurrentUser() user: any, @Body() body: { plan: string }) {
     return this.authService.upgradePlan(user.userId, body.plan);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  async updateProfile(
+    @CurrentUser() user: any,
+    @Body(new ZodValidationPipe(UpdateProfileSchema)) dto: UpdateProfileDto
+  ) {
+    return this.authService.updateProfile(user.userId, dto);
   }
 }
