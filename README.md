@@ -12,6 +12,10 @@ Marketplace B2B para aluguel de equipamentos entre empresas.
 - **Zod** - Validação de dados
 - **Swagger** - Documentação de API
 - **Docker** - Containerização
+- **Sentry** - Error tracking
+- **BetterStack** - Logs centralizados
+- **Cloudinary** - Upload de imagens
+- **Mercado Pago** - Gateway de pagamento
 
 ## Arquitetura
 
@@ -159,6 +163,13 @@ docker-compose up -d
 - `GET /api/admin/users` - Listar todos os usuários (ADMIN)
 - `GET /api/admin/rentals` - Listar todos os aluguéis (ADMIN)
 
+### Observabilidade
+
+- `GET /api/health` - Health check completo (DB, memória, uptime)
+- `GET /api/health/ready` - Readiness check (Kubernetes)
+- `GET /api/health/live` - Liveness check
+- `GET /api/metrics` - Métricas de negócio e sistema
+
 ## Documentação Swagger
 
 Acesse: `http://localhost:3000/api/docs`
@@ -260,15 +271,36 @@ const { data: equipments } = useQuery({
 - [SECURITY_IMPLEMENTATION.md](./SECURITY_IMPLEMENTATION.md)
 - [SENSITIVE_DATA_PROTECTION.md](./SENSITIVE_DATA_PROTECTION.md) - Proteção LGPD/GDPR
 
+## Observabilidade
+
+Sistema completo de monitoramento e observabilidade implementado:
+
+- ✅ **Health Checks** - Endpoints para verificar status da aplicação
+- ✅ **Metrics** - Métricas de negócio e sistema em tempo real
+- ✅ **Sentry** - Error tracking automático com stack traces
+- ✅ **BetterStack** - Logs centralizados com dashboard profissional
+- ✅ **Logger Service** - Logs estruturados em JSON
+
+**Setup rápido (15 min):**
+1. Configure Sentry: https://sentry.io/signup (5k erros/mês grátis)
+2. Configure BetterStack: https://betterstack.com/logs (1GB logs/mês grátis)
+3. Adicione as variáveis no `.env`
+4. Teste: `./test-observability.sh`
+
+**Documentação completa:**
+- [OBSERVABILITY_SETUP.md](./OBSERVABILITY_SETUP.md) - Setup rápido
+- [OBSERVABILITY.md](./OBSERVABILITY.md) - Guia completo
+
 ## Próximos Passos (Pós-MVP)
 
-- [ ] Integração com gateway de pagamento real
-- [ ] Sistema de notificações
+- [x] ~~Integração com gateway de pagamento real~~ (Mercado Pago implementado)
+- [x] ~~Upload de imagens~~ (Cloudinary implementado)
+- [x] ~~Sistema de notificações~~ (Implementado)
+- [x] ~~Sistema de avaliações~~ (Implementado)
+- [x] ~~Observabilidade~~ (Sentry + BetterStack implementado)
 - [ ] Chat entre empresas
-- [ ] Upload de imagens para S3
-- [ ] Sistema de avaliações
-- [ ] Relatórios e analytics
-- [ ] Testes automatizados
+- [ ] Relatórios e analytics avançados
+- [ ] Testes automatizados (unitários + E2E)
 
 ## Scripts Disponíveis
 

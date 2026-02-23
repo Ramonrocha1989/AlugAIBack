@@ -12,6 +12,8 @@ import { ProposalsModule } from './modules/proposals/proposals.module';
 import { UsersModule } from './modules/users/users.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { HealthModule } from './modules/health/health.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from './common/prisma.service';
 
@@ -32,6 +34,8 @@ import { PrismaService } from './common/prisma.service';
     UsersModule,
     PlansModule,
     WebhooksModule,
+    HealthModule,
+    MetricsModule,
   ],
   providers: [
     PrismaService,
