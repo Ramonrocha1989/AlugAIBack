@@ -10,7 +10,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Instalar dependências
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 
 # Copiar código
 COPY . .
@@ -18,6 +18,9 @@ COPY . .
 # Gerar Prisma e build
 RUN npx prisma generate
 RUN npm run build
+
+# Verificar se dist foi criado
+RUN ls -la dist/
 
 EXPOSE 3000
 
