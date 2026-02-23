@@ -19,8 +19,8 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-# Verificar se dist foi criado
-RUN ls -la dist/
+# Verificar se dist foi criado e listar conteúdo
+RUN ls -laR dist/
 
 EXPOSE 3000
 
