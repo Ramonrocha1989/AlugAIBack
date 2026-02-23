@@ -291,6 +291,25 @@ Sistema completo de monitoramento e observabilidade implementado:
 - [OBSERVABILITY_SETUP.md](./OBSERVABILITY_SETUP.md) - Setup rápido
 - [OBSERVABILITY.md](./OBSERVABILITY.md) - Guia completo
 
+## Testes Automatizados
+
+Sistema completo de testes implementado:
+
+- ✅ **Testes Unitários** - AuthService, MachinesService
+- ✅ **Testes E2E** - Auth endpoints, Machines endpoints
+- ✅ **CI/CD Pipeline** - GitHub Actions + Railway
+- ✅ **Cobertura de Código** - Jest coverage reports
+
+**Rodar testes:**
+```bash
+./run-tests.sh          # Todos os testes
+npm test                # Testes unitários
+npm run test:e2e        # Testes E2E
+npm run test:cov        # Com cobertura
+```
+
+**Documentação completa:** [TESTING.md](./TESTING.md)
+
 ## Próximos Passos (Pós-MVP)
 
 - [x] ~~Integração com gateway de pagamento real~~ (Mercado Pago implementado)
@@ -298,9 +317,9 @@ Sistema completo de monitoramento e observabilidade implementado:
 - [x] ~~Sistema de notificações~~ (Implementado)
 - [x] ~~Sistema de avaliações~~ (Implementado)
 - [x] ~~Observabilidade~~ (Sentry + BetterStack implementado)
+- [x] ~~Testes automatizados~~ (Jest + CI/CD implementado)
 - [ ] Chat entre empresas
 - [ ] Relatórios e analytics avançados
-- [ ] Testes automatizados (unitários + E2E)
 
 ## Scripts Disponíveis
 
@@ -308,6 +327,9 @@ Sistema completo de monitoramento e observabilidade implementado:
 npm run start:dev      # Desenvolvimento com hot-reload
 npm run build          # Build para produção
 npm run start:prod     # Executar produção
+npm run test           # Testes unitários
+npm run test:e2e       # Testes E2E
+npm run test:cov       # Testes com cobertura
 npm run prisma:migrate # Executar migrations
 npm run prisma:studio  # Interface visual do banco
 ```
