@@ -60,6 +60,7 @@ jobs:
           JWT_SECRET: test-secret-key
           JWT_EXPIRES_IN: 15m
           FRONTEND_URL: http://localhost:3000
+          RESEND_API_KEY: re_test_key_for_ci
         run: npm run test:e2e
 
       - name: Upload coverage
