@@ -5,7 +5,6 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import * as Sentry from '@sentry/node';
-import { ProfilingIntegration } from '@sentry/profiling-node';
 import { LoggerService } from './common/logger.service';
 import { SentryInterceptor } from './common/sentry.interceptor';
 
@@ -15,11 +14,7 @@ async function bootstrap() {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
-      integrations: [
-        new ProfilingIntegration(),
-      ],
       tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-      profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     });
     console.log('✅ Sentry initialized');
   }
