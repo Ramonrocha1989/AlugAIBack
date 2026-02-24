@@ -21,6 +21,15 @@ describe('Machines (e2e)', () => {
     
     prisma = app.get<PrismaService>(PrismaService);
     
+    // Clean database before tests
+    await prisma.machine.deleteMany();
+    await prisma.deleteToken.deleteMany();
+    await prisma.emailVerificationToken.deleteMany();
+    await prisma.passwordResetToken.deleteMany();
+    await prisma.refreshToken.deleteMany();
+    await prisma.user.deleteMany();
+    await prisma.company.deleteMany();
+    
     await app.init();
 
     const email = `test-machines-${Date.now()}@example.com`;
