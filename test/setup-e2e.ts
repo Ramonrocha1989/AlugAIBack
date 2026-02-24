@@ -4,9 +4,13 @@ export default async () => {
   console.log('\n🔧 Setting up E2E test environment...\n');
   
   try {
-    // Run Prisma migrations
-    console.log('📦 Running Prisma migrations...');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    // Generate Prisma Client first
+    console.log('📦 Generating Prisma Client...');
+    execSync('npx prisma generate', { stdio: 'inherit' });
+    
+    // Push schema to database (works for both dev and CI)
+    console.log('📦 Pushing Prisma schema to database...');
+    execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit' });
     
     console.log('✅ E2E setup complete!\n');
   } catch (error) {
