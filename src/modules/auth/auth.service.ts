@@ -6,6 +6,7 @@ import { PrismaService } from '../../common/prisma.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { RequestDeleteDto, ConfirmDeleteDto } from './dto/delete-account.dto';
 import { EmailService } from './email.service';
 
 @Injectable()
@@ -112,6 +113,10 @@ export class AuthService {
 
     if (!user.emailVerified) {
       throw new UnauthorizedException('Email não verificado. Verifique sua caixa de entrada.');
+    }
+
+    if (user.status === 'DELETED') {
+      throw new UnauthorizedException('Sua conta foi marcada para exclusão. Entre em contato com o suporte.');
     }
 
     const accessToken = this.generateToken(user.id, user.email, user.role);
@@ -431,5 +436,76 @@ export class AuthService {
     });
 
     return { message: 'Perfil atualizado com sucesso', user };
+  }
+
+  async requestDelete(userId: string, dto: RequestDeleteDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Senha incorreta');
+    }
+
+    const token = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 86400000); // 24h
+
+    await this.prisma.deleteToken.create({
+      data: {
+        userId,
+        token,
+        expiresAt,
+      },
+    });
+
+    await this.emailService.sendDeleteConfirmationEmail(user.email, user.name, token);
+
+    return { message: 'Email de confirmação enviado' };
+  }
+
+  async confirmDelete(dto: ConfirmDeleteDto) {
+    const deleteToken = await this.prisma.deleteToken.findFirst({
+      where: {
+        token: dto.token,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
+    });
+
+    if (!deleteToken) {
+      throw new BadRequestException('Token inválido ou expirado');
+    }
+
+    const deletionDate = new Date();
+    deletionDate.setDate(deletionDate.getDate() + 30);
+
+    await this.prisma.user.update({
+      where: { id: deleteToken.userId },
+      data: {
+        deletedAt: new Date(),
+        status: 'DELETED',
+      },
+    });
+
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId: deleteToken.userId },
+    });
+
+    await this.prisma.deleteToken.delete({
+      where: { id: deleteToken.id },
+    });
+
+    await this.emailService.sendDeletedAccountEmail(
+      deleteToken.user.email,
+      deleteToken.user.name,
+      deletionDate,
+    );
+
+    return { message: 'Conta marcada para exclusão' };
   }
 }

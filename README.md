@@ -132,6 +132,8 @@ docker-compose up -d
 - `POST /api/auth/verify-email` - Verificar email com token
 - `POST /api/auth/forgot-password` - Solicitar recuperação de senha
 - `POST /api/auth/reset-password` - Resetar senha com token
+- `POST /api/auth/request-delete` - Solicitar exclusão de conta
+- `POST /api/auth/confirm-delete` - Confirmar exclusão com token
 
 ### Empresas
 
@@ -216,6 +218,12 @@ Acesse: `http://localhost:3000/api/docs`
 - Token para verificação de email
 - Expira em 24 horas
 - Uso único
+
+### DeleteToken
+- Token para confirmação de exclusão de conta
+- Expira em 24 horas
+- Uso único
+- Soft delete com período de graça de 30 dias
 
 ## Integração com Front-end (Next.js + React Query)
 

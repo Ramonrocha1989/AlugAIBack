@@ -7,6 +7,7 @@ import { RegisterDto, LoginDto, RegisterSchema, LoginSchema } from './dto/auth.d
 import { ForgotPasswordDto, ResetPasswordDto, ForgotPasswordSchema, ResetPasswordSchema } from './dto/password-reset.dto';
 import { VerifyEmailDto, VerifyEmailSchema } from './dto/verify-email.dto';
 import { UpdateProfileDto, UpdateProfileSchema } from './dto/update-profile.dto';
+import { RequestDeleteDto, ConfirmDeleteDto, RequestDeleteSchema, ConfirmDeleteSchema } from './dto/delete-account.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { Public, CurrentUser } from './decorators/auth.decorators';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -163,5 +164,32 @@ export class AuthController {
     @Body(new ZodValidationPipe(UpdateProfileSchema)) dto: UpdateProfileDto
   ) {
     return this.authService.updateProfile(user.userId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 3, ttl: 3600000 } })
+  @Post('request-delete')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Request account deletion' })
+  @ApiResponse({ status: 200, description: 'Confirmation email sent' })
+  @ApiResponse({ status: 401, description: 'Invalid password' })
+  async requestDelete(
+    @CurrentUser() user: any,
+    @Body(new ZodValidationPipe(RequestDeleteSchema)) dto: RequestDeleteDto
+  ) {
+    return this.authService.requestDelete(user.userId, dto);
+  }
+
+  @Public()
+  @Post('confirm-delete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Confirm account deletion with token' })
+  @ApiResponse({ status: 200, description: 'Account marked for deletion' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async confirmDelete(
+    @Body(new ZodValidationPipe(ConfirmDeleteSchema)) dto: ConfirmDeleteDto
+  ) {
+    return this.authService.confirmDelete(dto);
   }
 }

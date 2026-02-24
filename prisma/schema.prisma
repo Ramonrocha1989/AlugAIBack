@@ -51,42 +51,47 @@ model Company {
   document  String   @unique
   createdAt DateTime @default(now())
 
-  users      User[]
+  users User[]
 
   @@map("companies")
 }
 
 model User {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   name             String
-  email            String   @unique
+  email            String    @unique
   password         String
   phone            String?
-  role             UserRole @default(COMPANY)
+  role             UserRole  @default(COMPANY)
   companyId        String?
-  emailVerified    Boolean  @default(false)
-  isBanned         Boolean  @default(false)
-  isVerifiedSeller Boolean  @default(false)
-  plan             String   @default("free")
+  emailVerified    Boolean   @default(false)
+  isBanned         Boolean   @default(false)
+  isVerifiedSeller Boolean   @default(false)
+  plan             String    @default("free")
   planExpiresAt    DateTime?
-  maxAds           Int      @default(3)
-  maxPremiumAds    Int      @default(0)
-  maxFeaturedAds   Int      @default(0)
-  createdAt        DateTime @default(now())
+  maxAds           Int       @default(3)
+  maxPremiumAds    Int       @default(0)
+  maxFeaturedAds   Int       @default(0)
+  deletedAt        DateTime?
+  status           String    @default("ACTIVE")
+  createdAt        DateTime  @default(now())
 
-  company                  Company?                   @relation(fields: [companyId], references: [id])
-  passwordResetTokens      PasswordResetToken[]
-  emailVerificationTokens  EmailVerificationToken[]
-  refreshTokens            RefreshToken[]
-  machines                 Machine[]
-  favorites                Favorite[]
-  reviewsGiven             Review[]                   @relation("ReviewerUser")
-  reviewsReceived          Review[]                   @relation("ReviewedUser")
-  notifications            Notification[]
-  proposalsSent            Proposal[]                 @relation("ProposalSender")
-  proposalsReceived        Proposal[]                 @relation("ProposalReceiver")
+  company                 Company?                 @relation(fields: [companyId], references: [id])
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  refreshTokens           RefreshToken[]
+  deleteTokens            DeleteToken[]
+  machines                Machine[]
+  favorites               Favorite[]
+  reviewsGiven            Review[]                 @relation("ReviewerUser")
+  reviewsReceived         Review[]                 @relation("ReviewedUser")
+  notifications           Notification[]
+  proposalsSent           Proposal[]               @relation("ProposalSender")
+  proposalsReceived       Proposal[]               @relation("ProposalReceiver")
 
   @@index([plan])
+  @@index([status])
+  @@index([deletedAt])
   @@map("users")
 }
 
@@ -133,6 +138,20 @@ model RefreshToken {
   @@index([token])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+model DeleteToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("delete_tokens")
 }
 
 model Favorite {
@@ -190,47 +209,47 @@ model Notification {
 }
 
 model Machine {
-  id              String          @id @default(uuid())
-  businessType    BusinessType
-  name            String
-  description     String          @db.Text
-  category        MachineCategory
-  manufacturer    String
-  model           String
-  yearModel       Int
-  power           Int?
-  engineHours     Int?
-  serialNumber    String?
-  price           Decimal         @db.Decimal(12, 2)
-  acceptsTradeDown Boolean        @default(false)
-  acceptsTradeUp   Boolean        @default(false)
-  acceptsGrains    Boolean        @default(false)
-  acceptsFinancing Boolean        @default(false)
-  state           String
-  city            String
-  zipCode         String?
-  images          String[]
-  videoUrl        String?
-  quickTags       String[]
-  ownerId         String
-  ownerName       String
-  ownerPhone      String?
-  isVerifiedSeller Boolean       @default(false)
-  available       Boolean         @default(true)
-  status          String          @default("ACTIVE")
-  isFeatured      Boolean         @default(false)
-  isPremium       Boolean         @default(false)
-  views           Int             @default(0)
-  whatsappClicks  Int             @default(0)
-  qualifiedLeads  Int             @default(0)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
-  owner           User            @relation(fields: [ownerId], references: [id])
-  favorites       Favorite[]
-  reviews         Review[]
-  proposals       Proposal[]
-  
+  id               String          @id @default(uuid())
+  businessType     BusinessType
+  name             String
+  description      String          @db.Text
+  category         MachineCategory
+  manufacturer     String
+  model            String
+  yearModel        Int
+  power            Int?
+  engineHours      Int?
+  serialNumber     String?
+  price            Decimal         @db.Decimal(12, 2)
+  acceptsTradeDown Boolean         @default(false)
+  acceptsTradeUp   Boolean         @default(false)
+  acceptsGrains    Boolean         @default(false)
+  acceptsFinancing Boolean         @default(false)
+  state            String
+  city             String
+  zipCode          String?
+  images           String[]
+  videoUrl         String?
+  quickTags        String[]
+  ownerId          String
+  ownerName        String
+  ownerPhone       String?
+  isVerifiedSeller Boolean         @default(false)
+  available        Boolean         @default(true)
+  status           String          @default("ACTIVE")
+  isFeatured       Boolean         @default(false)
+  isPremium        Boolean         @default(false)
+  views            Int             @default(0)
+  whatsappClicks   Int             @default(0)
+  qualifiedLeads   Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  owner     User       @relation(fields: [ownerId], references: [id])
+  favorites Favorite[]
+  reviews   Review[]
+  proposals Proposal[]
+
   @@index([category])
   @@index([businessType])
   @@index([state])
@@ -245,19 +264,19 @@ model Machine {
 }
 
 model Proposal {
-  id                String         @id @default(uuid())
-  machineId         String
-  senderId          String
-  receiverId        String
-  proposedPrice     Decimal        @db.Decimal(12, 2)
-  message           String         @db.Text
-  status            ProposalStatus @default(PENDING)
-  counterPrice      Decimal?       @db.Decimal(12, 2)
-  counterMessage    String?        @db.Text
-  viewedByReceiver  Boolean        @default(false)
-  viewedBySender    Boolean        @default(false)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  id               String         @id @default(uuid())
+  machineId        String
+  senderId         String
+  receiverId       String
+  proposedPrice    Decimal        @db.Decimal(12, 2)
+  message          String         @db.Text
+  status           ProposalStatus @default(PENDING)
+  counterPrice     Decimal?       @db.Decimal(12, 2)
+  counterMessage   String?        @db.Text
+  viewedByReceiver Boolean        @default(false)
+  viewedBySender   Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   machine  Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
   sender   User    @relation("ProposalSender", fields: [senderId], references: [id], onDelete: Cascade)

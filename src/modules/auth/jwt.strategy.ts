@@ -29,6 +29,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException();
     }
 
+    if (user.status === 'DELETED') {
+      throw new UnauthorizedException('Sua conta foi marcada para exclusão');
+    }
+
     return {
       id: user.id,
       userId: user.id,

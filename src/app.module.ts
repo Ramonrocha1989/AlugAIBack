@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './modules/auth/auth.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -19,9 +20,10 @@ import { PrismaService } from './common/prisma.service';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{
-      ttl: 60000, // 1 minuto
-      limit: 100, // 100 requisições por minuto
+      ttl: 60000,
+      limit: 100,
     }]),
     AuthModule,
     CompaniesModule,
