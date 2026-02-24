@@ -8,8 +8,11 @@ import * as Sentry from '@sentry/node';
 import { LoggerService } from './common/logger.service';
 import { SentryInterceptor } from './common/sentry.interceptor';
 import { HttpLoggerInterceptor } from './common/http-logger.interceptor';
+import { validateEnv } from './config/env.validation';
 
 async function bootstrap() {
+  // Validate environment variables first
+  validateEnv();
   // Inicializar Sentry
   if (process.env.SENTRY_DSN) {
     Sentry.init({

@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { PrismaService } from '../../common/prisma.service';
+import { ForbiddenException } from '@nestjs/common';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -30,7 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     if (user.status === 'DELETED') {
-      throw new UnauthorizedException('Sua conta foi marcada para exclusão');
+      throw new ForbiddenException('Sua conta foi marcada para exclusão');
     }
 
     return {

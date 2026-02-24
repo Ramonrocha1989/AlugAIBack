@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -116,7 +116,7 @@ export class AuthService {
     }
 
     if (user.status === 'DELETED') {
-      throw new UnauthorizedException('Sua conta foi marcada para exclusão. Entre em contato com o suporte.');
+      throw new ForbiddenException('Sua conta foi marcada para exclusão. Entre em contato com o suporte.');
     }
 
     const accessToken = this.generateToken(user.id, user.email, user.role);

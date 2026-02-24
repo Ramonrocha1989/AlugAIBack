@@ -59,20 +59,31 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body(new ZodValidationPipe(LoginSchema)) dto: LoginDto,
+    @Res() res: Response,
   ) {
-    const result = await this.authService.login(dto);
-    
-    const { phone, company, ...userWithoutSensitive } = result.user;
-    const { document, ...companyWithoutDocument } = company || {};
-    
-    return {
-      user: {
-        ...userWithoutSensitive,
-        company: company ? companyWithoutDocument : null,
-      },
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-    };
+    try {
+      const result = await this.authService.login(dto);
+      
+      const { phone, company, ...userWithoutSensitive } = result.user;
+      const { document, ...companyWithoutDocument } = company || {};
+      
+      return res.json({
+        user: {
+          ...userWithoutSensitive,
+          company: company ? companyWithoutDocument : null,
+        },
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      });
+    } catch (error) {
+      if (error.status === 403 && error.message.includes('marcada para exclusão')) {
+        return res.status(403).json({
+          message: error.message,
+          accountDeleted: true,
+        });
+      }
+      throw error;
+    }
   }
 
   @UseGuards(JwtAuthGuard)
