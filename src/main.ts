@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import * as Sentry from '@sentry/node';
 import { LoggerService } from './common/logger.service';
 import { SentryInterceptor } from './common/sentry.interceptor';
+import { HttpLoggerInterceptor } from './common/http-logger.interceptor';
 
 async function bootstrap() {
   // Inicializar Sentry
@@ -23,7 +24,9 @@ async function bootstrap() {
     logger: new LoggerService(),
   });
 
-  // Sentry Interceptor Global
+  // Global Interceptors
+  app.useGlobalInterceptors(new HttpLoggerInterceptor());
+  
   if (process.env.SENTRY_DSN) {
     app.useGlobalInterceptors(new SentryInterceptor());
   }
