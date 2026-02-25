@@ -27,6 +27,9 @@ async function bootstrap() {
     logger: new LoggerService(),
   });
 
+  // Enable graceful shutdown
+  app.enableShutdownHooks();
+
   // Global Interceptors
   app.useGlobalInterceptors(new HttpLoggerInterceptor());
   
@@ -111,6 +114,23 @@ async function bootstrap() {
   if (process.env.BETTERSTACK_TOKEN) {
     console.log(`📝 BetterStack: Logs enabled`);
   }
+
+  // Graceful shutdown handlers
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`\n🛑 ${signal} received, shutting down gracefully...`);
+    
+    try {
+      await app.close();
+      console.log('✅ Application closed successfully');
+      process.exit(0);
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
 bootstrap();
