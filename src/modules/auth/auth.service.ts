@@ -33,7 +33,7 @@ export class AuthService {
     });
 
     if (existingCompany) {
-      throw new ConflictException('Company document already registered');
+      throw new ConflictException('CPF/CNPJ já cadastrado');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
