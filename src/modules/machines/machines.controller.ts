@@ -11,6 +11,7 @@ import {
   MachineFiltersSchema,
 } from './dto/machine.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { SanitizePipe } from '../../common/pipes/sanitize.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, Public } from '../auth/decorators/auth.decorators';
 
@@ -26,7 +27,7 @@ export class MachinesController {
   @ApiResponse({ status: 201, description: 'Máquina criada com sucesso' })
   async create(
     @CurrentUser() user: any,
-    @Body(new ZodValidationPipe(CreateMachineSchema)) dto: CreateMachineDto,
+    @Body(new SanitizePipe(), new ZodValidationPipe(CreateMachineSchema)) dto: CreateMachineDto,
   ) {
     return this.machinesService.create(user.id, user.name, dto);
   }
@@ -106,7 +107,7 @@ export class MachinesController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: any,
-    @Body(new ZodValidationPipe(UpdateMachineSchema)) dto: UpdateMachineDto,
+    @Body(new SanitizePipe(), new ZodValidationPipe(UpdateMachineSchema)) dto: UpdateMachineDto,
   ) {
     return this.machinesService.update(id, user.id, dto);
   }

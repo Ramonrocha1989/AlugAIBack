@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto, UpdateReviewDto, CreateReviewSchema, UpdateReviewSchema } from './dto/review.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { SanitizePipe } from '../../common/pipes/sanitize.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, Public } from '../auth/decorators/auth.decorators';
 
@@ -20,7 +21,7 @@ export class ReviewsController {
   @ApiResponse({ status: 409, description: 'Você já avaliou esta transação' })
   async create(
     @CurrentUser() user: any,
-    @Body(new ZodValidationPipe(CreateReviewSchema)) dto: CreateReviewDto,
+    @Body(new SanitizePipe(), new ZodValidationPipe(CreateReviewSchema)) dto: CreateReviewDto,
   ) {
     return this.reviewsService.create(user.id, dto);
   }
@@ -58,7 +59,7 @@ export class ReviewsController {
   async update(
     @Param('id') id: string,
     @CurrentUser() user: any,
-    @Body(new ZodValidationPipe(UpdateReviewSchema)) dto: UpdateReviewDto,
+    @Body(new SanitizePipe(), new ZodValidationPipe(UpdateReviewSchema)) dto: UpdateReviewDto,
   ) {
     return this.reviewsService.update(id, user.id, dto);
   }

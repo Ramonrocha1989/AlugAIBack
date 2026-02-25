@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ProposalsService } from './proposals.service';
 import { CreateProposalDto, CounterProposalDto, CreateProposalSchema, CounterProposalSchema } from './dto/proposal.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { SanitizePipe } from '../../common/pipes/sanitize.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/auth.decorators';
 
@@ -18,7 +19,7 @@ export class ProposalsController {
   @ApiResponse({ status: 201, description: 'Proposta criada com sucesso' })
   async create(
     @CurrentUser() user: any,
-    @Body(new ZodValidationPipe(CreateProposalSchema)) dto: CreateProposalDto,
+    @Body(new SanitizePipe(), new ZodValidationPipe(CreateProposalSchema)) dto: CreateProposalDto,
   ) {
     return this.proposalsService.create(user.userId, dto);
   }
@@ -53,7 +54,7 @@ export class ProposalsController {
   async counter(
     @Param('id') id: string,
     @CurrentUser() user: any,
-    @Body(new ZodValidationPipe(CounterProposalSchema)) dto: CounterProposalDto,
+    @Body(new SanitizePipe(), new ZodValidationPipe(CounterProposalSchema)) dto: CounterProposalDto,
   ) {
     return this.proposalsService.counter(id, user.userId, dto);
   }
