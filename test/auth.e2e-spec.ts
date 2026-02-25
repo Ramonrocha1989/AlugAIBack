@@ -44,7 +44,6 @@ describe('Auth (e2e)', () => {
           email,
           password: 'Password123!',
           companyName: 'Test Company',
-          companyDocument: `${Date.now()}`,
           phone: '11999999999',
         })
         .expect(201)
@@ -63,7 +62,6 @@ describe('Auth (e2e)', () => {
           email,
           password: 'Password123!',
           companyName: 'Test Company',
-          companyDocument: `${Date.now()}`,
           phone: '11999999999',
         });
 
@@ -73,7 +71,6 @@ describe('Auth (e2e)', () => {
           email,
           password: 'Password123!',
           companyName: 'Test Company 2',
-          companyDocument: `${Date.now() + 1}`,
           phone: '11999999998',
         })
         .expect(409);
@@ -104,7 +101,6 @@ describe('Auth (e2e)', () => {
           email,
           password: 'Password123!',
           companyName: 'Profile Test Company',
-          companyDocument: `${Date.now()}`,
           phone: '11999999999',
         });
 

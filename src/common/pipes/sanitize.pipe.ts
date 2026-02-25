@@ -11,6 +11,19 @@ export class SanitizePipe implements PipeTransform {
   }
 
   private sanitizeObject(obj: any): any {
+    if (Array.isArray(obj)) {
+      return obj.map(item => 
+        typeof item === 'object' && item !== null 
+          ? this.sanitizeObject(item) 
+          : typeof item === 'string'
+          ? sanitizeHtml(item, {
+              allowedTags: ['b', 'i', 'em', 'strong', 'br', 'p'],
+              allowedAttributes: {},
+            })
+          : item
+      );
+    }
+
     const sanitized = { ...obj };
     for (const key in sanitized) {
       if (typeof sanitized[key] === 'string') {

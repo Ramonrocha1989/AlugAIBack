@@ -39,7 +39,6 @@ describe('Machines (e2e)', () => {
         email,
         password: 'Password123!',
         companyName: 'Test Company',
-        companyDocument: `${Date.now()}`,
         phone: '11999999999',
       });
 
@@ -76,6 +75,8 @@ describe('Machines (e2e)', () => {
           acceptsTradeDown: false,
           acceptsTradeUp: false,
           acceptsGrains: false,
+          acceptsFinancing: false,
+          quickTags: [],
         })
         .expect(201)
         .expect((res) => {
@@ -102,6 +103,8 @@ describe('Machines (e2e)', () => {
           acceptsTradeDown: false,
           acceptsTradeUp: false,
           acceptsGrains: false,
+          acceptsFinancing: false,
+          quickTags: [],
         })
         .expect(401);
     });
