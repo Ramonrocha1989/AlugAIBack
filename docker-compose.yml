@@ -5,9 +5,9 @@ services:
     image: postgres:16-alpine
     container_name: equipment_rental_db
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: equipment_rental
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-equipment_rental}
     ports:
       - "5432:5432"
     volumes:
@@ -19,9 +19,16 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://user:password@postgres:5432/equipment_rental?schema=public
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      JWT_EXPIRES_IN: 7d
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-equipment_rental}?schema=public&connection_limit=10&pool_timeout=10&connect_timeout=5
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
+      NODE_ENV: ${NODE_ENV:-development}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-development}
+      BETTERSTACK_TOKEN: ${BETTERSTACK_TOKEN:-}
     depends_on:
       - postgres
     volumes:
