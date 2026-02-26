@@ -279,44 +279,21 @@ const { data: equipments } = useQuery({
 - [SECURITY_IMPLEMENTATION.md](./SECURITY_IMPLEMENTATION.md)
 - [SENSITIVE_DATA_PROTECTION.md](./SENSITIVE_DATA_PROTECTION.md) - Proteção LGPD/GDPR
 
-## Observabilidade
+## 📚 Documentação Completa
 
-Sistema completo de monitoramento e observabilidade implementado:
+**Toda a documentação foi consolidada em um único arquivo:**
 
-- ✅ **Health Checks** - Endpoints para verificar status da aplicação
-- ✅ **Metrics** - Métricas de negócio e sistema em tempo real
-- ✅ **Sentry** - Error tracking automático com stack traces
-- ✅ **BetterStack** - Logs centralizados com dashboard profissional
-- ✅ **Logger Service** - Logs estruturados em JSON
+👉 **[DOCS.md](./DOCS.md)** - Documentação completa do projeto
 
-**Setup rápido (15 min):**
-1. Configure Sentry: https://sentry.io/signup (5k erros/mês grátis)
-2. Configure BetterStack: https://betterstack.com/logs (1GB logs/mês grátis)
-3. Adicione as variáveis no `.env`
-4. Teste: `./test-observability.sh`
-
-**Documentação completa:**
-- [OBSERVABILITY_SETUP.md](./OBSERVABILITY_SETUP.md) - Setup rápido
-- [OBSERVABILITY.md](./OBSERVABILITY.md) - Guia completo
-
-## Testes Automatizados
-
-Sistema completo de testes implementado:
-
-- ✅ **Testes Unitários** - AuthService, MachinesService
-- ✅ **Testes E2E** - Auth endpoints, Machines endpoints
-- ✅ **CI/CD Pipeline** - GitHub Actions + Railway
-- ✅ **Cobertura de Código** - Jest coverage reports
-
-**Rodar testes:**
-```bash
-./run-tests.sh          # Todos os testes
-npm test                # Testes unitários
-npm run test:e2e        # Testes E2E
-npm run test:cov        # Com cobertura
-```
-
-**Documentação completa:** [TESTING.md](./TESTING.md)
+Inclui:
+- 🏗️ Arquitetura e Stack
+- 🚀 Instalação e Setup
+- 📡 API Endpoints (Auth, Máquinas, Propostas, Favoritos, Reviews, Notificações)
+- 🔒 Segurança e LGPD
+- 🔍 Observabilidade (Health, Metrics, Sentry, BetterStack)
+- 🧪 Testes Automatizados
+- 🚢 Deploy e Produção
+- 🔧 Troubleshooting
 
 ## Próximos Passos (Pós-MVP)
 
