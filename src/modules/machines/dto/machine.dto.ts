@@ -36,7 +36,7 @@ export const CreateMachineSchema = z.object({
   manufacturer: z.string().min(2, 'Fabricante obrigatório').max(100).trim(),
   model: z.string().min(1, 'Modelo obrigatório').max(100).trim(),
   yearModel: z.number().int().min(1980).max(new Date().getFullYear() + 1),
-  power: z.number().int().positive().max(9999).optional(),
+  power: z.number().positive().max(9999).optional(),
   engineHours: z.number().int().min(0).max(999999).optional(),
   serialNumber: z.string().max(100).optional(),
   price: z.number().positive('Preço deve ser maior que zero').max(999999999),
@@ -50,7 +50,7 @@ export const CreateMachineSchema = z.object({
   images: z.array(z.string().url('URL de imagem inválida')).min(1, 'Mínimo 1 imagem').max(15, 'Máximo 15 imagens'),
   videoUrl: z.string().url('URL de vídeo inválida').optional(),
   quickTags: z.array(QuickTagsEnum).max(10).default([]),
-  ownerPhone: z.string().regex(/^55\d{10,11}$/, 'Telefone inválido (formato: 5551999887766)').optional(),
+  ownerPhone: z.string().regex(/^\d{10,11}$/, 'Telefone inválido (formato: 51999887766)').optional(),
 });
 
 export const UpdateMachineSchema = CreateMachineSchema.partial().extend({
@@ -73,8 +73,8 @@ export const MachineFiltersSchema = z.object({
   maxYear: z.number().int().optional(),
   minEngineHours: z.number().int().min(0).optional(),
   maxEngineHours: z.number().int().min(0).optional(),
-  minPower: z.number().int().positive().optional(),
-  maxPower: z.number().int().positive().optional(),
+  minPower: z.number().positive().optional(),
+  maxPower: z.number().positive().optional(),
   acceptsTradeDown: z.boolean().optional(),
   acceptsTradeUp: z.boolean().optional(),
   acceptsGrains: z.boolean().optional(),
