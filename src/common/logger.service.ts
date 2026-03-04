@@ -11,27 +11,27 @@ export class LoggerService implements NestLoggerService {
     }
   }
 
-  log(message: string, context?: string) {
-    this.writeLog('info', message, context);
+  log(message: string, context?: string, metadata?: any) {
+    this.writeLog('info', message, context, metadata);
   }
 
-  error(message: string, trace?: string, context?: string) {
-    this.writeLog('error', message, context, { trace });
+  error(message: string, trace?: string, context?: string, metadata?: any) {
+    this.writeLog('error', message, context, { trace, ...metadata });
   }
 
-  warn(message: string, context?: string) {
-    this.writeLog('warn', message, context);
+  warn(message: string, context?: string, metadata?: any) {
+    this.writeLog('warn', message, context, metadata);
   }
 
-  debug(message: string, context?: string) {
+  debug(message: string, context?: string, metadata?: any) {
     if (process.env.NODE_ENV === 'development') {
-      this.writeLog('debug', message, context);
+      this.writeLog('debug', message, context, metadata);
     }
   }
 
-  verbose(message: string, context?: string) {
+  verbose(message: string, context?: string, metadata?: any) {
     if (process.env.NODE_ENV === 'development') {
-      this.writeLog('verbose', message, context);
+      this.writeLog('verbose', message, context, metadata);
     }
   }
 
