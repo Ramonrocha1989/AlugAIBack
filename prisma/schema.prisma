@@ -12,6 +12,11 @@ enum UserRole {
   COMPANY
 }
 
+enum UserType {
+  INDIVIDUAL
+  COMPANY
+}
+
 enum BusinessType {
   SALE
   RENTAL
@@ -63,6 +68,10 @@ model User {
   password         String
   phone            String?
   role             UserRole  @default(COMPANY)
+  userType         UserType  @default(COMPANY)
+  fullName         String?
+  cpf              String?
+  responsibleName  String?
   companyId        String?
   emailVerified    Boolean   @default(false)
   isBanned         Boolean   @default(false)

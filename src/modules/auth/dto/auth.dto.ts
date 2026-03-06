@@ -8,17 +8,37 @@ export const RegisterSchema = z.object({
     .regex(/[A-Z]/, 'Senha deve conter ao menos uma letra maiúscula')
     .regex(/[a-z]/, 'Senha deve conter ao menos uma letra minúscula')
     .regex(/[0-9]/, 'Senha deve conter ao menos um número'),
-  companyName: z.string().min(2, 'Nome da empresa muito curto'),
-  name: z.string().min(2, 'Nome muito curto').optional(),
-  companyDocument: z.string()
+  userType: z.enum(['INDIVIDUAL', 'COMPANY'], { required_error: 'Tipo de usuário obrigatório' }),
+  fullName: z.string().min(2, 'Nome completo muito curto').optional(),
+  cpf: z.string()
     .optional()
     .refine(
       (doc) => !doc || validateDocument(doc),
-      'CPF ou CNPJ inválido'
+      'CPF inválido'
     )
     .transform((doc) => doc ? normalizeDocument(doc) : undefined),
+  companyName: z.string().min(2, 'Nome da empresa muito curto').optional(),
+  cnpj: z.string()
+    .optional()
+    .refine(
+      (doc) => !doc || validateDocument(doc),
+      'CNPJ inválido'
+    )
+    .transform((doc) => doc ? normalizeDocument(doc) : undefined),
+  responsibleName: z.string().min(2, 'Nome do responsável muito curto').optional(),
   phone: z.string().regex(/^\d{10,11}$/, 'Telefone inválido (formato: 51999887766)'),
-});
+}).refine(
+  (data) => {
+    if (data.userType === 'INDIVIDUAL') {
+      return !!data.fullName;
+    }
+    return !!data.companyName && !!data.responsibleName;
+  },
+  {
+    message: 'Campos obrigatórios não preenchidos',
+    path: ['userType'],
+  }
+);
 
 export const LoginSchema = z.object({
   email: z.string().email('Email inválido'),

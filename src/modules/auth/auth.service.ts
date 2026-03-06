@@ -26,31 +26,44 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    const companyDocument = dto.companyDocument || `DOC-${Date.now()}`;
+    const isIndividual = dto.userType === 'INDIVIDUAL';
+    const document = isIndividual ? dto.cpf : dto.cnpj;
+    const companyDocument = document || `DOC-${Date.now()}`;
 
-    const existingCompany = await this.prisma.company.findUnique({
-      where: { document: companyDocument },
-    });
+    if (document) {
+      const existingCompany = await this.prisma.company.findUnique({
+        where: { document: companyDocument },
+      });
 
-    if (existingCompany) {
-      throw new ConflictException('CPF/CNPJ já cadastrado');
+      if (existingCompany) {
+        throw new ConflictException('CPF/CNPJ já cadastrado');
+      }
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
+    const userName = isIndividual ? dto.fullName : dto.companyName;
+    if (!userName) {
+      throw new BadRequestException('Nome obrigatório');
+    }
+
     const company = await this.prisma.company.create({
       data: {
-        name: dto.companyName,
+        name: userName,
         document: companyDocument,
       },
     });
 
     const user = await this.prisma.user.create({
       data: {
-        name: dto.name || dto.email.split('@')[0],
+        name: userName,
         email: dto.email,
         password: hashedPassword,
         phone: `55${dto.phone}`,
+        userType: dto.userType,
+        fullName: dto.fullName,
+        cpf: dto.cpf,
+        responsibleName: dto.responsibleName,
         companyId: company.id,
         role: 'COMPANY',
       },
@@ -81,6 +94,7 @@ export class AuthService {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        userType: user.userType,
         plan: user.plan,
         emailVerified: user.emailVerified,
         company: user.company ? {
@@ -143,6 +157,7 @@ export class AuthService {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        userType: user.userType,
         plan: user.plan,
         planExpiresAt: user.planExpiresAt,
         maxAds: user.maxAds,
@@ -276,6 +291,7 @@ export class AuthService {
         email: true,
         phone: true,
         role: true,
+        userType: true,
         plan: true,
         planExpiresAt: true,
         maxAds: true,
@@ -311,6 +327,7 @@ export class AuthService {
 
     return {
       ...user,
+      userType: user.userType,
       usage: {
         activeAds,
         premiumAds,
@@ -381,6 +398,7 @@ export class AuthService {
         email: storedToken.user.email,
         phone: storedToken.user.phone,
         role: storedToken.user.role,
+        userType: storedToken.user.userType,
         plan: storedToken.user.plan,
         planExpiresAt: storedToken.user.planExpiresAt,
         maxAds: storedToken.user.maxAds,

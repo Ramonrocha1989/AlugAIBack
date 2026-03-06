@@ -67,12 +67,14 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('should register a new user successfully', async () => {
+    it('should register a new company user successfully', async () => {
       const registerDto = {
         email: 'test@example.com',
         password: 'password123',
+        userType: 'COMPANY' as const,
         companyName: 'Test Company',
-        companyDocument: '12345678000190',
+        cnpj: '12345678000190',
+        responsibleName: 'John Doe',
         phone: '11999999999',
       };
 
@@ -86,9 +88,10 @@ describe('AuthService', () => {
       mockPrismaService.user.create.mockResolvedValue({
         id: 'user-id',
         email: 'test@example.com',
-        name: 'test',
+        name: 'Test Company',
         phone: '5511999999999',
         role: 'COMPANY',
+        userType: 'COMPANY',
         plan: 'free',
         emailVerified: false,
         company: {
@@ -115,8 +118,10 @@ describe('AuthService', () => {
         service.register({
           email: 'existing@example.com',
           password: 'password123',
+          userType: 'COMPANY',
           companyName: 'Test Company',
-          companyDocument: '12345678000190',
+          cnpj: '12345678000190',
+          responsibleName: 'John Doe',
           phone: '11999999999',
         }),
       ).rejects.toThrow(ConflictException);
@@ -135,7 +140,9 @@ describe('AuthService', () => {
         name: 'Test User',
         phone: '5511999999999',
         role: 'COMPANY',
+        userType: 'COMPANY',
         plan: 'free',
+        status: 'ACTIVE',
         company: {
           id: 'company-id',
           name: 'Test Company',
