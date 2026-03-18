@@ -83,6 +83,10 @@ model User {
   maxFeaturedAds   Int       @default(0)
   deletedAt        DateTime?
   status           String    @default("ACTIVE")
+  companyName      String?
+  description      String?   @db.Text
+  website          String?
+  location         String?
   createdAt        DateTime  @default(now())
 
   company                 Company?                 @relation(fields: [companyId], references: [id])

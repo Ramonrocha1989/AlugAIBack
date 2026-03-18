@@ -182,6 +182,7 @@ export class MachinesService {
             email: true,
             phone: true,
             isVerifiedSeller: true,
+            companyName: true,
           },
         },
       },
@@ -193,6 +194,11 @@ export class MachinesService {
 
     return {
       ...machine,
+      user: {
+        id: machine.owner.id,
+        company_name: machine.owner.companyName,
+        phone: machine.ownerPhone || machine.owner.phone,
+      },
       ownerPhone: machine.ownerPhone || machine.owner.phone,
       isVerifiedSeller: machine.owner.isVerifiedSeller,
     };
