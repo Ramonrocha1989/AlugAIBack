@@ -43,8 +43,8 @@ async function bootstrap() {
   // CORS PRIMEIRO (antes de tudo)
   app.enableCors({
     origin: [
-      'https://mercadomaquina.online',
-      'https://www.mercadomaquina.online',
+      'https://baitabriq.com.br',
+      'https://www.baitabriq.com.br',
       'https://jovial-cuchufli-4e3662.netlify.app',
       'http://localhost:3000',
       'http://localhost:3001',
