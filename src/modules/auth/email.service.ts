@@ -14,9 +14,9 @@ export class EmailService {
 
     try {
       await this.resend.emails.send({
-        from: 'Mercado Máquina <noreply@mercadomaquina.online>',
+        from: 'BaitaBriq <noreply@baitabriq.com.br>',
         to: email,
-        subject: 'Recuperação de Senha - Mercado Máquina',
+        subject: 'Recuperação de Senha - BaitaBriq',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>Recuperação de Senha</h2>
@@ -40,12 +40,12 @@ export class EmailService {
 
     try {
       await this.resend.emails.send({
-        from: 'Mercado Máquina <noreply@mercadomaquina.online>',
+        from: 'BaitaBriq <noreply@baitabriq.com.br>',
         to: email,
-        subject: 'Verifique seu email - Mercado Máquina',
+        subject: 'Verifique seu email - BaitaBriq',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>Bem-vindo ao Mercado Máquina!</h2>
+            <h2>Bem-vindo ao BaitaBriq!</h2>
             <p>Obrigado por se cadastrar. Para ativar sua conta, clique no botão abaixo:</p>
             <div style="text-align: center; margin: 30px 0;">
               <a href="${verifyLink}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Verificar Email</a>
@@ -65,13 +65,13 @@ export class EmailService {
 
     try {
       await this.resend.emails.send({
-        from: 'Mercado Máquina <noreply@mercadomaquina.online>',
+        from: 'BaitaBriq <noreply@baitabriq.com.br>',
         to: email,
-        subject: 'Confirme a exclusão da sua conta - Mercado Máquina',
+        subject: 'Confirme a exclusão da sua conta - BaitaBriq',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>Olá ${userName},</h2>
-            <p>Recebemos uma solicitação para excluir sua conta no Mercado Máquina.</p>
+            <p>Recebemos uma solicitação para excluir sua conta no BaitaBriq.</p>
             <p><strong>⚠️ ATENÇÃO: Esta ação é irreversível!</strong></p>
             <h3>O que será excluído:</h3>
             <ul>
@@ -88,7 +88,7 @@ export class EmailService {
             <p style="color: #666; font-size: 14px;">Se você não solicitou esta exclusão, ignore este email e sua conta permanecerá ativa.</p>
             <p style="color: #666; font-size: 14px;">Após a confirmação, você terá 30 dias para recuperar sua conta entrando em contato com o suporte.</p>
             <br>
-            <p>Atenciosamente,<br>Equipe Mercado Máquina</p>
+            <p>Atenciosamente,<br>Equipe BaitaBriq</p>
           </div>
         `,
       });
@@ -100,9 +100,9 @@ export class EmailService {
   async sendDeletedAccountEmail(email: string, userName: string, deletionDate: Date) {
     try {
       await this.resend.emails.send({
-        from: 'Mercado Máquina <noreply@mercadomaquina.online>',
+        from: 'BaitaBriq <noreply@baitabriq.com.br>',
         to: email,
-        subject: 'Sua conta foi marcada para exclusão - Mercado Máquina',
+        subject: 'Sua conta foi marcada para exclusão - BaitaBriq',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>Olá ${userName},</h2>
@@ -110,11 +110,11 @@ export class EmailService {
             <p><strong>Data de exclusão definitiva:</strong> ${deletionDate.toLocaleDateString('pt-BR')}</p>
             <p>Para recuperar sua conta antes desta data, entre em contato:</p>
             <ul>
-              <li>Email: suporte@mercadomaquina.online</li>
+              <li>Email: suporte@baitabriq.com.br</li>
             </ul>
             <p>Sentiremos sua falta!</p>
             <br>
-            <p>Equipe Mercado Máquina</p>
+            <p>Equipe BaitaBriq</p>
           </div>
         `,
       });
