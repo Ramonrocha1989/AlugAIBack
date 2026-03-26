@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../common/prisma.service';
+import { encrypt, decrypt, hashDocument } from '../../common/utils/crypto.util';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -27,12 +28,13 @@ export class AuthService {
     }
 
     const isIndividual = dto.userType === 'INDIVIDUAL';
-    const document = isIndividual ? dto.cpf : dto.cnpj;
-    const companyDocument = document || `DOC-${Date.now()}`;
+    const rawDocument = isIndividual ? dto.cpf : dto.cnpj;
+    const companyDocument = rawDocument || `DOC-${Date.now()}`;
+    const docHash = hashDocument(companyDocument);
 
-    if (document) {
+    if (rawDocument) {
       const existingCompany = await this.prisma.company.findUnique({
-        where: { document: companyDocument },
+        where: { documentHash: docHash },
       });
 
       if (existingCompany) {
@@ -50,7 +52,8 @@ export class AuthService {
     const company = await this.prisma.company.create({
       data: {
         name: userName,
-        document: companyDocument,
+        document: encrypt(companyDocument),
+        documentHash: docHash,
       },
     });
 
@@ -62,7 +65,7 @@ export class AuthService {
         phone: `55${dto.phone}`,
         userType: dto.userType,
         fullName: dto.fullName,
-        cpf: dto.cpf,
+        cpf: dto.cpf ? encrypt(dto.cpf) : undefined,
         responsibleName: dto.responsibleName,
         companyId: company.id,
         role: 'COMPANY',
@@ -517,6 +520,16 @@ export class AuthService {
     await this.prisma.deleteToken.delete({
       where: { id: deleteToken.id },
     });
+
+    // Limpar company órfã se não houver mais users ativos
+    if (deleteToken.user.companyId) {
+      const remainingUsers = await this.prisma.user.count({
+        where: { companyId: deleteToken.user.companyId, status: { not: 'DELETED' } },
+      });
+      if (remainingUsers === 0) {
+        await this.prisma.company.delete({ where: { id: deleteToken.user.companyId } });
+      }
+    }
 
     await this.emailService.sendDeletedAccountEmail(
       deleteToken.user.email,

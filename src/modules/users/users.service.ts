@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
+import { decrypt } from '../../common/utils/crypto.util';
 import { UpdateProfileDto } from './dto/user.dto';
 
 @Injectable()
@@ -30,6 +31,10 @@ export class UsersService {
       throw new NotFoundException('Usuário não encontrado');
     }
 
+    if (user.company?.document) {
+      user.company.document = decrypt(user.company.document);
+    }
+
     return user;
   }
 
@@ -38,7 +43,7 @@ export class UsersService {
     if (dto.name) data.name = dto.name;
     if (dto.phone) data.phone = `55${dto.phone}`;
 
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id: userId },
       data,
       select: {
@@ -57,5 +62,11 @@ export class UsersService {
         },
       },
     });
+
+    if (user.company?.document) {
+      user.company.document = decrypt(user.company.document);
+    }
+
+    return user;
   }
 }

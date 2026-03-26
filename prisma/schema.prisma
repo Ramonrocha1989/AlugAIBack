@@ -51,10 +51,11 @@ enum ProposalStatus {
 }
 
 model Company {
-  id        String   @id @default(uuid())
-  name      String
-  document  String   @unique
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  name         String
+  document     String
+  documentHash String   @unique
+  createdAt    DateTime @default(now())
 
   users User[]
 
