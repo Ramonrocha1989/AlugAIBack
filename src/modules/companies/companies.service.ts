@@ -21,7 +21,7 @@ export class CompaniesService {
     });
 
     if (!company) {
-      throw new NotFoundException('Company not found');
+      throw new NotFoundException('Empresa não encontrada');
     }
 
     return company;

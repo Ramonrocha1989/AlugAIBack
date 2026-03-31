@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './modules/auth/auth.module';
 import { CompaniesModule } from './modules/companies/companies.module';
@@ -47,7 +48,7 @@ import { PrismaService } from './common/prisma.service';
     },
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: CustomThrottlerGuard,
     },
   ],
 })

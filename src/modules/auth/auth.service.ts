@@ -119,13 +119,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Email ou senha inválidos');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Email ou senha inválidos');
     }
 
     if (!user.emailVerified) {
@@ -313,7 +313,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('Usuário não encontrado');
     }
 
     const [activeAds, premiumAds, featuredAds] = await Promise.all([

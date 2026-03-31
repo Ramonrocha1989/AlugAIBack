@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Sessão expirada ou inválida');
     }
 
     if (user.status === 'DELETED') {

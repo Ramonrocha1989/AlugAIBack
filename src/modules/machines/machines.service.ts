@@ -258,7 +258,7 @@ export class MachinesService {
     });
     
     return {
-      message: 'WhatsApp click tracked',
+      message: 'Clique no WhatsApp registrado',
       contact: {
         ownerPhone: machine.ownerPhone || machine.owner.phone,
         ownerEmail: machine.owner.email,
@@ -276,7 +276,7 @@ export class MachinesService {
       where: { id },
       data: { qualifiedLeads: { increment: 1 } },
     });
-    return { message: 'Qualified lead marked' };
+    return { message: 'Lead qualificado registrado' };
   }
 
   async update(id: string, userId: string, dto: UpdateMachineDto) {
