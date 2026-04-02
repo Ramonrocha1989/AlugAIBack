@@ -71,7 +71,7 @@ export class WebhooksService {
         return;
       }
 
-      await this.activatePlan(paymentData.external_reference, paymentId);
+      await this.activatePlan(paymentData.external_reference || '', paymentId);
     } catch (error: any) {
       this.logger.error(`Erro ao processar pagamento ${paymentId}: ${error.message}`);
     }
@@ -91,7 +91,7 @@ export class WebhooksService {
       const approvedPayment = orderData.payments?.find(p => p.status === 'approved');
       if (!approvedPayment) return;
 
-      await this.activatePlan(orderData.external_reference, approvedPayment.id?.toString());
+      await this.activatePlan(orderData.external_reference || '', approvedPayment.id?.toString() || '');
     } catch (error: any) {
       this.logger.error(`Erro ao processar merchant order ${orderId}: ${error.message}`);
     }
