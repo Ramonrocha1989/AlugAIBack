@@ -26,6 +26,13 @@ const envSchema = z.object({
 
   // Payment
   MERCADOPAGO_ACCESS_TOKEN: z.string().min(1, 'MERCADOPAGO_ACCESS_TOKEN is required'),
+  MERCADOPAGO_WEBHOOK_SECRET: z.string().min(1, 'MERCADOPAGO_WEBHOOK_SECRET is required'),
+
+  // Encryption
+  ENCRYPTION_KEY: z
+    .string()
+    .length(64, 'ENCRYPTION_KEY must be a 64-char hex string (32 bytes)')
+    .regex(/^[0-9a-f]+$/i, 'ENCRYPTION_KEY must be a valid hex string'),
 
   // Observability (optional)
   SENTRY_DSN: z.string().url().optional(),

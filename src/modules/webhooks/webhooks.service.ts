@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { createHmac } from 'crypto';
 import { PrismaService } from '../../common/prisma.service';
 
 @Injectable()
@@ -11,6 +12,41 @@ export class WebhooksService {
     this.client = new MercadoPagoConfig({
       accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
     });
+  }
+
+  validateSignature(xSignature: string, xRequestId: string, dataId: string) {
+    const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+    if (!secret) {
+      throw new Error('MERCADOPAGO_WEBHOOK_SECRET não configurado');
+    }
+
+    if (!xSignature || !xRequestId) {
+      throw new Error('Headers de assinatura ausentes');
+    }
+
+    const parts = xSignature.split(',');
+    let ts = '';
+    let hash = '';
+
+    parts.forEach(part => {
+      const [key, value] = part.split('=');
+      if (key.trim() === 'ts') ts = value.trim();
+      if (key.trim() === 'v1') hash = value.trim();
+    });
+
+    if (!ts || !hash) {
+      throw new Error('Formato de assinatura inválido');
+    }
+
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+    const hmac = createHmac('sha256', secret).update(manifest).digest('hex');
+
+    if (hmac !== hash) {
+      this.logger.warn('Assinatura inválida do webhook');
+      throw new Error('Assinatura inválida');
+    }
+
+    this.logger.log('✅ Assinatura do webhook validada');
   }
 
   async handleMercadoPagoWebhook(body: any) {
@@ -64,7 +100,7 @@ export class WebhooksService {
         },
       });
       
-      this.logger.log(`✅ Plano ${planType} ativado para usuário ${userId} com limites: ${JSON.stringify(limits)}`);
+      this.logger.log(`✅ Plano ${planType} ativado para usuário ${userId}`);
 
     } catch (error: any) {
       this.logger.error(`Erro ao processar pagamento ${paymentId}: ${error.message}`);
