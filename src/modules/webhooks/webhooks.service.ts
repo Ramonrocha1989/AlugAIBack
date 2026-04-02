@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { MercadoPagoConfig, Payment, MerchantOrder } from 'mercadopago';
 import { createHmac } from 'crypto';
 import { PrismaService } from '../../common/prisma.service';
 
@@ -50,60 +50,84 @@ export class WebhooksService {
   }
 
   async handleMercadoPagoWebhook(body: any) {
-    if (body.type !== 'payment') {
-      return;
-    }
+    this.logger.log(`Webhook recebido: type=${body.type}, action=${body.action}`);
 
-    const paymentId = body.data?.id;
-    
-    if (!paymentId) {
-      return;
+    if (body.type === 'payment') {
+      await this.processPayment(body.data?.id);
+    } else if (body.type === 'topic_merchant_order_wh' || body.type === 'merchant_order') {
+      await this.processMerchantOrder(body.data?.id || body.id);
     }
+  }
+
+  private async processPayment(paymentId: string) {
+    if (!paymentId) return;
 
     try {
       const payment = new Payment(this.client);
       const paymentData = await payment.get({ id: paymentId });
 
       if (paymentData.status !== 'approved') {
+        this.logger.log(`Pagamento ${paymentId} com status: ${paymentData.status}`);
         return;
       }
 
-      const externalReference = paymentData.external_reference;
-      
-      if (!externalReference) {
-        this.logger.warn(`Pagamento ${paymentId} sem external_reference`);
-        return;
-      }
-
-      const parts = externalReference.split('-');
-      const planType = parts[parts.length - 1];
-      const userId = parts.slice(0, -1).join('-');
-      
-      if (!userId || !planType) {
-        this.logger.error(`External reference inválido: ${externalReference}`);
-        return;
-      }
-
-      const planLimits = {
-        free: { maxAds: 3, maxPremiumAds: 0, maxFeaturedAds: 0 },
-        lojista: { maxAds: 999, maxPremiumAds: 3, maxFeaturedAds: 5 },
-      };
-
-      const limits = planLimits[planType] || planLimits.free;
-
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          plan: planType,
-          planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          ...limits,
-        },
-      });
-      
-      this.logger.log(`✅ Plano ${planType} ativado para usuário ${userId}`);
-
+      await this.activatePlan(paymentData.external_reference, paymentId);
     } catch (error: any) {
       this.logger.error(`Erro ao processar pagamento ${paymentId}: ${error.message}`);
     }
+  }
+
+  private async processMerchantOrder(orderId: string) {
+    if (!orderId) return;
+
+    try {
+      const merchantOrder = new MerchantOrder(this.client);
+      const orderData = await merchantOrder.get({ merchantOrderId: orderId });
+
+      this.logger.log(`Merchant order ${orderId}: status=${orderData.status}, payments=${JSON.stringify(orderData.payments?.map(p => ({ id: p.id, status: p.status })))}`);
+
+      if (orderData.status !== 'closed') return;
+
+      const approvedPayment = orderData.payments?.find(p => p.status === 'approved');
+      if (!approvedPayment) return;
+
+      await this.activatePlan(orderData.external_reference, approvedPayment.id?.toString());
+    } catch (error: any) {
+      this.logger.error(`Erro ao processar merchant order ${orderId}: ${error.message}`);
+    }
+  }
+
+  private async activatePlan(externalReference: string, paymentId: string) {
+    if (!externalReference) {
+      this.logger.warn(`Pagamento ${paymentId} sem external_reference`);
+      return;
+    }
+
+    const parts = externalReference.split('-');
+    const planType = parts[parts.length - 1];
+    const userId = parts.slice(0, -1).join('-');
+
+    if (!userId || !planType) {
+      this.logger.error(`External reference inválido: ${externalReference}`);
+      return;
+    }
+
+    const planLimits = {
+      free: { maxAds: 3, maxPremiumAds: 0, maxFeaturedAds: 0 },
+      lojista: { maxAds: 999, maxPremiumAds: 3, maxFeaturedAds: 5 },
+    };
+
+    const limits = planLimits[planType] || planLimits.free;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        plan: planType,
+        planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        ...limits,
+      },
+    });
+
+    this.logger.log(`✅ Plano ${planType} ativado para usuário ${userId}`);
   }
 }
