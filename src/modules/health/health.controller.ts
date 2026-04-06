@@ -1,16 +1,20 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { HealthService } from './health.service';
-import { Public } from '../auth/decorators/auth.decorators';
+import { Public, Roles } from '../auth/decorators/auth.decorators';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
-  @Public()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
   @Get()
-  @ApiOperation({ summary: 'Health check - verifica status de todos os serviços' })
+  @ApiOperation({ summary: 'Health check completo - ADMIN only' })
   async check() {
     return this.healthService.check();
   }

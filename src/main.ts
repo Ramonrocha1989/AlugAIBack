@@ -42,14 +42,18 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // CORS PRIMEIRO (antes de tudo)
+  const allowedOrigins = [
+    'https://baitabriq.com.br',
+    'https://www.baitabriq.com.br',
+    'https://jovial-cuchufli-4e3662.netlify.app',
+  ];
+
+  if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.push('http://localhost:3000', 'http://localhost:3001');
+  }
+
   app.enableCors({
-    origin: [
-      'https://baitabriq.com.br',
-      'https://www.baitabriq.com.br',
-      'https://jovial-cuchufli-4e3662.netlify.app',
-      'http://localhost:3000',
-      'http://localhost:3001',
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -83,21 +87,23 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api');
 
-  // Swagger configuration
-  const config = new DocumentBuilder()
-    .setTitle('Equipment Rental Marketplace API')
-    .setDescription('B2B Equipment Rental Marketplace - MVP')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addTag('auth', 'Authentication endpoints')
-    .addTag('companies', 'Company management')
-    .addTag('equipments', 'Equipment management')
-    .addTag('rentals', 'Rental management')
-    .addTag('admin', 'Admin endpoints')
-    .build();
+  // Swagger configuration (disabled in production)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Equipment Rental Marketplace API')
+      .setDescription('B2B Equipment Rental Marketplace - MVP')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('auth', 'Authentication endpoints')
+      .addTag('companies', 'Company management')
+      .addTag('equipments', 'Equipment management')
+      .addTag('rentals', 'Rental management')
+      .addTag('admin', 'Admin endpoints')
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
