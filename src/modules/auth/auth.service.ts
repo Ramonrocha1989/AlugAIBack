@@ -375,6 +375,11 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token inválido ou expirado');
     }
 
+    // Rotação: invalidar token antigo e gerar novo
+    await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
+    const newRefreshToken = this.generateRefreshToken();
+    await this.saveRefreshToken(storedToken.user.id, newRefreshToken);
+
     const accessToken = this.generateToken(
       storedToken.user.id,
       storedToken.user.email,
@@ -395,6 +400,7 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken: newRefreshToken,
       user: {
         id: storedToken.user.id,
         name: storedToken.user.name,
