@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { MachinesService } from './machines.service';
@@ -65,7 +65,7 @@ export class MachinesController {
   @ApiOperation({ summary: 'Buscar máquina por ID' })
   @ApiResponse({ status: 200, description: 'Máquina encontrada' })
   @ApiResponse({ status: 404, description: 'Máquina não encontrada' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.machinesService.findOne(id);
   }
 
@@ -74,7 +74,7 @@ export class MachinesController {
   @Throttle({ default: { limit: 30, ttl: 3600000 } })
   @ApiOperation({ summary: 'Incrementar visualizações' })
   @ApiResponse({ status: 200, description: 'Visualização registrada' })
-  async incrementView(@Param('id') id: string) {
+  async incrementView(@Param('id', ParseUUIDPipe) id: string) {
     return this.machinesService.incrementView(id);
   }
 
@@ -84,7 +84,7 @@ export class MachinesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Track WhatsApp click' })
   @ApiResponse({ status: 200, description: 'Click tracked successfully' })
-  async trackWhatsapp(@Param('id') id: string) {
+  async trackWhatsapp(@Param('id', ParseUUIDPipe) id: string) {
     return this.machinesService.trackWhatsappClick(id);
   }
 
@@ -94,7 +94,7 @@ export class MachinesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark qualified lead' })
   @ApiResponse({ status: 200, description: 'Lead marked successfully' })
-  async markLead(@Param('id') id: string) {
+  async markLead(@Param('id', ParseUUIDPipe) id: string) {
     return this.machinesService.markQualifiedLead(id);
   }
 
@@ -106,7 +106,7 @@ export class MachinesController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   @ApiResponse({ status: 404, description: 'Máquina não encontrada' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: any,
     @Body(new SanitizePipe(), new ZodValidationPipe(UpdateMachineSchema)) dto: UpdateMachineDto,
   ) {
@@ -120,7 +120,7 @@ export class MachinesController {
   @ApiResponse({ status: 200, description: 'Máquina deletada com sucesso' })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   @ApiResponse({ status: 404, description: 'Máquina não encontrada' })
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
     return this.machinesService.remove(id, user.userId);
   }
 }

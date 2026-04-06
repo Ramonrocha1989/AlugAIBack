@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Delete, Param, Query, UseGuards, HttpCode } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Param, Query, UseGuards, HttpCode, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -39,7 +39,7 @@ export class NotificationsController {
   @Put(':id/read')
   @ApiOperation({ summary: 'Marcar notificação como lida' })
   @ApiResponse({ status: 200, description: 'Notificação marcada como lida' })
-  async markAsRead(@Param('id') id: string, @CurrentUser() user: any) {
+  async markAsRead(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
     return this.notificationsService.markAsRead(id, user.userId);
   }
 
@@ -54,7 +54,7 @@ export class NotificationsController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Deletar notificação' })
   @ApiResponse({ status: 204, description: 'Notificação deletada com sucesso' })
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
     await this.notificationsService.remove(id, user.userId);
   }
 }

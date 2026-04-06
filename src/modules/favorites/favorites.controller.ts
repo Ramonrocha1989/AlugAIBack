@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Get, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Delete, Get, Body, Param, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { FavoritesService } from './favorites.service';
 import { AddFavoriteDto, AddFavoriteSchema } from './dto/favorite.dto';
@@ -29,7 +29,7 @@ export class FavoritesController {
   @ApiResponse({ status: 200, description: 'Favorito removido com sucesso' })
   async removeFavorite(
     @CurrentUser() user: any,
-    @Param('machineId') machineId: string,
+    @Param('machineId', ParseUUIDPipe) machineId: string,
   ) {
     await this.favoritesService.removeFavorite(user.userId, machineId);
     return { message: 'Favorito removido com sucesso' };
@@ -47,7 +47,7 @@ export class FavoritesController {
   @ApiResponse({ status: 200, description: 'Status de favorito verificado' })
   async isFavorited(
     @CurrentUser() user: any,
-    @Param('machineId') machineId: string,
+    @Param('machineId', ParseUUIDPipe) machineId: string,
   ) {
     return this.favoritesService.isFavorited(user.userId, machineId);
   }

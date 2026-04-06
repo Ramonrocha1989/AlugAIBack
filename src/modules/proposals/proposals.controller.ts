@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ProposalsService } from './proposals.service';
 import { CreateProposalDto, CounterProposalDto, CreateProposalSchema, CounterProposalSchema } from './dto/proposal.dto';
@@ -37,14 +37,14 @@ export class ProposalsController {
   @Patch(':id/accept')
   @ApiOperation({ summary: 'Aceitar proposta' })
   @ApiResponse({ status: 200, description: 'Proposta aceita' })
-  async accept(@Param('id') id: string, @CurrentUser() user: any) {
+  async accept(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
     return this.proposalsService.accept(id, user.userId);
   }
 
   @Patch(':id/reject')
   @ApiOperation({ summary: 'Recusar proposta' })
   @ApiResponse({ status: 200, description: 'Proposta recusada' })
-  async reject(@Param('id') id: string, @CurrentUser() user: any) {
+  async reject(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
     return this.proposalsService.reject(id, user.userId);
   }
 
@@ -52,7 +52,7 @@ export class ProposalsController {
   @ApiOperation({ summary: 'Fazer contra-proposta' })
   @ApiResponse({ status: 200, description: 'Contra-proposta enviada' })
   async counter(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: any,
     @Body(new SanitizePipe(), new ZodValidationPipe(CounterProposalSchema)) dto: CounterProposalDto,
   ) {
@@ -63,14 +63,14 @@ export class ProposalsController {
   @HttpCode(204)
   @ApiOperation({ summary: 'Cancelar proposta' })
   @ApiResponse({ status: 204, description: 'Proposta cancelada' })
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
     return this.proposalsService.remove(id, user.userId);
   }
 
   @Patch(':id/view')
   @ApiOperation({ summary: 'Marcar proposta como vista' })
   @ApiResponse({ status: 200, description: 'Proposta marcada como vista' })
-  async markAsViewed(@Param('id') id: string, @CurrentUser() user: any) {
+  async markAsViewed(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
     return this.proposalsService.markAsViewed(id, user.userId);
   }
 }

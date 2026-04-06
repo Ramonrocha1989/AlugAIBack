@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, HttpCode } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, HttpCode, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto, UpdateReviewDto, CreateReviewSchema, UpdateReviewSchema } from './dto/review.dto';
@@ -30,7 +30,7 @@ export class ReviewsController {
   @Public()
   @ApiOperation({ summary: 'Listar avaliações recebidas por um usuário' })
   @ApiResponse({ status: 200, description: 'Avaliações recuperadas com sucesso' })
-  async findByUser(@Param('userId') userId: string) {
+  async findByUser(@Param('userId', ParseUUIDPipe) userId: string) {
     return this.reviewsService.findByUser(userId);
   }
 
@@ -38,7 +38,7 @@ export class ReviewsController {
   @Public()
   @ApiOperation({ summary: 'Listar avaliações de uma máquina' })
   @ApiResponse({ status: 200, description: 'Avaliações recuperadas com sucesso' })
-  async findByMachine(@Param('machineId') machineId: string) {
+  async findByMachine(@Param('machineId', ParseUUIDPipe) machineId: string) {
     return this.reviewsService.findByMachine(machineId);
   }
 
@@ -46,7 +46,7 @@ export class ReviewsController {
   @Public()
   @ApiOperation({ summary: 'Obter estatísticas de avaliação de um usuário' })
   @ApiResponse({ status: 200, description: 'Estatísticas recuperadas com sucesso' })
-  async getUserRating(@Param('userId') userId: string) {
+  async getUserRating(@Param('userId', ParseUUIDPipe) userId: string) {
     return this.reviewsService.getUserRating(userId);
   }
 
@@ -57,7 +57,7 @@ export class ReviewsController {
   @ApiResponse({ status: 200, description: 'Avaliação atualizada com sucesso' })
   @ApiResponse({ status: 403, description: 'Não pode editar após 7 dias ou não é o autor' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: any,
     @Body(new SanitizePipe(), new ZodValidationPipe(UpdateReviewSchema)) dto: UpdateReviewDto,
   ) {
@@ -71,7 +71,7 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Deletar avaliação' })
   @ApiResponse({ status: 204, description: 'Avaliação deletada com sucesso' })
   @ApiResponse({ status: 403, description: 'Você não pode deletar esta avaliação' })
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: any) {
     await this.reviewsService.remove(id, user.userId);
   }
 }
