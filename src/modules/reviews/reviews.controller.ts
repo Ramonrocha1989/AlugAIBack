@@ -23,7 +23,7 @@ export class ReviewsController {
     @CurrentUser() user: any,
     @Body(new SanitizePipe(), new ZodValidationPipe(CreateReviewSchema)) dto: CreateReviewDto,
   ) {
-    return this.reviewsService.create(user.id, dto);
+    return this.reviewsService.create(user.userId, dto);
   }
 
   @Get('user/:userId')
@@ -61,7 +61,7 @@ export class ReviewsController {
     @CurrentUser() user: any,
     @Body(new SanitizePipe(), new ZodValidationPipe(UpdateReviewSchema)) dto: UpdateReviewDto,
   ) {
-    return this.reviewsService.update(id, user.id, dto);
+    return this.reviewsService.update(id, user.userId, dto);
   }
 
   @Delete(':id')
@@ -72,6 +72,6 @@ export class ReviewsController {
   @ApiResponse({ status: 204, description: 'Avaliação deletada com sucesso' })
   @ApiResponse({ status: 403, description: 'Você não pode deletar esta avaliação' })
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.reviewsService.remove(id, user.id);
+    await this.reviewsService.remove(id, user.userId);
   }
 }

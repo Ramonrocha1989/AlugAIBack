@@ -29,7 +29,7 @@ export class MachinesController {
     @CurrentUser() user: any,
     @Body(new SanitizePipe(), new ZodValidationPipe(CreateMachineSchema)) dto: CreateMachineDto,
   ) {
-    return this.machinesService.create(user.id, user.name, dto);
+    return this.machinesService.create(user.userId, user.name, dto);
   }
 
   @Get()
@@ -57,7 +57,7 @@ export class MachinesController {
   @ApiOperation({ summary: 'Listar minhas máquinas' })
   @ApiResponse({ status: 200, description: 'Minhas máquinas recuperadas com sucesso' })
   async findMyMachines(@CurrentUser() user: any) {
-    return this.machinesService.findMyMachines(user.id);
+    return this.machinesService.findMyMachines(user.userId);
   }
 
   @Get(':id')
@@ -110,7 +110,7 @@ export class MachinesController {
     @CurrentUser() user: any,
     @Body(new SanitizePipe(), new ZodValidationPipe(UpdateMachineSchema)) dto: UpdateMachineDto,
   ) {
-    return this.machinesService.update(id, user.id, dto);
+    return this.machinesService.update(id, user.userId, dto);
   }
 
   @Delete(':id')
@@ -121,6 +121,6 @@ export class MachinesController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   @ApiResponse({ status: 404, description: 'Máquina não encontrada' })
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.machinesService.remove(id, user.id);
+    return this.machinesService.remove(id, user.userId);
   }
 }

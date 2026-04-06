@@ -22,7 +22,7 @@ export class NotificationsController {
   ) {
     const readBool = read === 'true' ? true : read === 'false' ? false : undefined;
     return this.notificationsService.findAll(
-      user.id,
+      user.userId,
       readBool,
       limit ? parseInt(limit) : 20,
       offset ? parseInt(offset) : 0,
@@ -33,21 +33,21 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Contador de notificações não lidas' })
   @ApiResponse({ status: 200, description: 'Contador recuperado com sucesso' })
   async getUnreadCount(@CurrentUser() user: any) {
-    return this.notificationsService.getUnreadCount(user.id);
+    return this.notificationsService.getUnreadCount(user.userId);
   }
 
   @Put(':id/read')
   @ApiOperation({ summary: 'Marcar notificação como lida' })
   @ApiResponse({ status: 200, description: 'Notificação marcada como lida' })
   async markAsRead(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.notificationsService.markAsRead(id, user.id);
+    return this.notificationsService.markAsRead(id, user.userId);
   }
 
   @Put('read-all')
   @ApiOperation({ summary: 'Marcar todas como lidas' })
   @ApiResponse({ status: 200, description: 'Todas marcadas como lidas' })
   async markAllAsRead(@CurrentUser() user: any) {
-    return this.notificationsService.markAllAsRead(user.id);
+    return this.notificationsService.markAllAsRead(user.userId);
   }
 
   @Delete(':id')
@@ -55,6 +55,6 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Deletar notificação' })
   @ApiResponse({ status: 204, description: 'Notificação deletada com sucesso' })
   async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    await this.notificationsService.remove(id, user.id);
+    await this.notificationsService.remove(id, user.userId);
   }
 }

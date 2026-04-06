@@ -21,7 +21,7 @@ export class FavoritesController {
     @CurrentUser() user: any,
     @Body(new ZodValidationPipe(AddFavoriteSchema)) dto: AddFavoriteDto,
   ) {
-    return this.favoritesService.addFavorite(user.id, dto.machineId);
+    return this.favoritesService.addFavorite(user.userId, dto.machineId);
   }
 
   @Delete(':machineId')
@@ -31,7 +31,7 @@ export class FavoritesController {
     @CurrentUser() user: any,
     @Param('machineId') machineId: string,
   ) {
-    await this.favoritesService.removeFavorite(user.id, machineId);
+    await this.favoritesService.removeFavorite(user.userId, machineId);
     return { message: 'Favorito removido com sucesso' };
   }
 
@@ -39,7 +39,7 @@ export class FavoritesController {
   @ApiOperation({ summary: 'Listar favoritos do usuário' })
   @ApiResponse({ status: 200, description: 'Favoritos recuperados com sucesso' })
   async getFavorites(@CurrentUser() user: any) {
-    return this.favoritesService.getFavorites(user.id);
+    return this.favoritesService.getFavorites(user.userId);
   }
 
   @Get('check/:machineId')
@@ -49,6 +49,6 @@ export class FavoritesController {
     @CurrentUser() user: any,
     @Param('machineId') machineId: string,
   ) {
-    return this.favoritesService.isFavorited(user.id, machineId);
+    return this.favoritesService.isFavorited(user.userId, machineId);
   }
 }
