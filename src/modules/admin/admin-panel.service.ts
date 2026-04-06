@@ -57,8 +57,22 @@ export class AdminService {
         where,
         skip,
         take: limit,
-        include: {
-          company: true,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          userType: true,
+          plan: true,
+          planExpiresAt: true,
+          maxAds: true,
+          emailVerified: true,
+          isBanned: true,
+          isVerifiedSeller: true,
+          status: true,
+          createdAt: true,
+          company: { select: { id: true, name: true } },
           _count: {
             select: {
               machines: true,
@@ -84,6 +98,7 @@ export class AdminService {
     const user = await this.prisma.user.update({
       where: { id },
       data: { isBanned: dto.isBanned },
+      select: { id: true, name: true, email: true, isBanned: true },
     });
 
     if (dto.isBanned) {
@@ -100,6 +115,7 @@ export class AdminService {
     return this.prisma.user.update({
       where: { id },
       data: { isVerifiedSeller: dto.isVerifiedSeller },
+      select: { id: true, name: true, email: true, isVerifiedSeller: true },
     });
   }
 
