@@ -47,3 +47,15 @@ export const LoginSchema = z.object({
 
 export type RegisterDto = z.infer<typeof RegisterSchema>;
 export type LoginDto = z.infer<typeof LoginSchema>;
+
+export const RefreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token obrigatório'),
+});
+
+export type RefreshTokenDto = z.infer<typeof RefreshTokenSchema>;
+
+export const UpgradePlanSchema = z.object({
+  plan: z.enum(['free', 'lojista'], { required_error: 'Plano obrigatório' }),
+});
+
+export type UpgradePlanDto = z.infer<typeof UpgradePlanSchema>;

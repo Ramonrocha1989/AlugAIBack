@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RegisterSchema, LoginSchema } from './dto/auth.dto';
+import { RegisterDto, LoginDto, RegisterSchema, LoginSchema, RefreshTokenDto, RefreshTokenSchema, UpgradePlanDto, UpgradePlanSchema } from './dto/auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto, ForgotPasswordSchema, ResetPasswordSchema } from './dto/password-reset.dto';
 import { VerifyEmailDto, VerifyEmailSchema } from './dto/verify-email.dto';
 import { UpdateProfileDto, UpdateProfileSchema } from './dto/update-profile.dto';
@@ -103,7 +103,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@Body() body: { refreshToken: string }) {
+  async refresh(@Body(new ZodValidationPipe(RefreshTokenSchema)) body: RefreshTokenDto) {
     const result = await this.authService.refreshAccessToken(body.refreshToken);
     
     const { phone, company, ...userWithoutSensitive } = result.user;
@@ -161,7 +161,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Upgrade user plan' })
   @ApiResponse({ status: 200, description: 'Plan upgraded successfully' })
-  async upgradePlan(@CurrentUser() user: any, @Body() body: { plan: string }) {
+  async upgradePlan(@CurrentUser() user: any, @Body(new ZodValidationPipe(UpgradePlanSchema)) body: UpgradePlanDto) {
     return this.authService.upgradePlan(user.userId, body.plan);
   }
 

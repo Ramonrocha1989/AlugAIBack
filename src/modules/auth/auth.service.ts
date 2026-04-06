@@ -86,7 +86,7 @@ export class AuthService {
 
     await this.emailService.sendVerificationEmail(user.email, verificationToken);
 
-    const token = this.generateToken(user.id, user.email, user.role, '7d');
+    const token = this.generateToken(user.id, user.email, user.role);
     const refreshToken = this.generateRefreshToken();
     await this.saveRefreshToken(user.id, refreshToken);
 

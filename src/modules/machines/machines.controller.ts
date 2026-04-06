@@ -71,6 +71,7 @@ export class MachinesController {
 
   @Post(':id/view')
   @Public()
+  @Throttle({ default: { limit: 30, ttl: 3600000 } })
   @ApiOperation({ summary: 'Incrementar visualizações' })
   @ApiResponse({ status: 200, description: 'Visualização registrada' })
   async incrementView(@Param('id') id: string) {
