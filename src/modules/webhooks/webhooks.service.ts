@@ -116,8 +116,8 @@ export class WebhooksService {
       const externalReference = subscription.external_reference;
       if (!externalReference) return;
 
-      const parts = externalReference.split('-');
-      const userId = parts.slice(0, -1).join('-');
+      const parts = externalReference.split('|');
+      const userId = parts[0];
 
       if (!userId) return;
 
@@ -134,9 +134,9 @@ export class WebhooksService {
       return;
     }
 
-    const parts = externalReference.split('-');
-    const planType = parts[parts.length - 1];
-    const userId = parts.slice(0, -1).join('-');
+    const parts = externalReference.split('|');
+    const userId = parts[0];
+    const planType = parts[1];
 
     if (!userId || !planType) {
       this.logger.error(`External reference inválido: ${externalReference}`);
