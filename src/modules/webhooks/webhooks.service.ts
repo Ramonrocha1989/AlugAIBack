@@ -149,6 +149,20 @@ export class WebhooksService {
       return;
     }
 
+    await this.prisma.payment.create({
+      data: {
+        userId,
+        planId: planType,
+        mercadoPagoId: paymentId,
+        externalReference,
+        amount: plan.price,
+        status: 'approved',
+        webhookType: 'plan_activation',
+      },
+    });
+
+    this.logger.log(`💰 Pagamento registrado: user=${userId}, plan=${planType}, mpId=${paymentId}`);
+
     await this.prisma.user.update({
       where: { id: userId },
       data: {
