@@ -41,10 +41,10 @@ ${footerHtml}
 </html>`;
   }
 
-  private header(title: string, color: string) {
+  private header(borderColor: string) {
     return `
-    <div style="text-align:center;padding:20px 0;border-bottom:2px solid ${color};">
-      <h1 style="color:${color};margin:0;">BaitaBriq</h1>
+    <div style="text-align:center;padding:20px 0;border-bottom:2px solid ${borderColor};">
+      <h1 style="margin:0;font-size:32px;"><span style="color:#16a34a;">baita</span><span style="color:#dc2626;">briq</span></h1>
     </div>`;
   }
 
@@ -70,7 +70,7 @@ ${footerHtml}
         headers: this.headers,
         text: `Bem-vindo ao BaitaBriq! Para ativar sua conta, acesse: ${verifyLink} - Este link expira em 24 horas.${footerText}`,
         html: this.wrap(`
-    ${this.header('BaitaBriq', '#16a34a')}
+    ${this.header('#16a34a')}
     <div style="padding:30px 20px;">
       <h2 style="color:#333;">Bem-vindo ao BaitaBriq!</h2>
       <p style="color:#555;line-height:1.6;">Obrigado por se cadastrar. Para ativar sua conta, clique no botão abaixo:</p>
@@ -97,7 +97,7 @@ ${footerHtml}
         headers: this.headers,
         text: `Você solicitou a recuperação de senha. Acesse: ${resetLink} - Este link expira em 1 hora. Se você não solicitou, ignore este email.${footerText}`,
         html: this.wrap(`
-    ${this.header('BaitaBriq', '#2563eb')}
+    ${this.header('#2563eb')}
     <div style="padding:30px 20px;">
       <h2 style="color:#333;">Redefinição de Senha</h2>
       <p style="color:#555;line-height:1.6;">Você solicitou a recuperação de senha. Clique no botão abaixo para redefinir:</p>
@@ -124,7 +124,7 @@ ${footerHtml}
         headers: this.headers,
         text: `Olá ${userName}, recebemos uma solicitação para excluir sua conta no BaitaBriq. ATENÇÃO: Esta ação é irreversível! Para confirmar, acesse: ${confirmLink} - Este link expira em 24 horas. Se você não solicitou, ignore este email.${footerText}`,
         html: this.wrap(`
-    ${this.header('BaitaBriq', '#dc2626')}
+    ${this.header('#dc2626')}
     <div style="padding:30px 20px;">
       <h2 style="color:#333;">Olá ${userName},</h2>
       <p style="color:#555;line-height:1.6;">Recebemos uma solicitação para excluir sua conta no BaitaBriq.</p>
@@ -161,7 +161,7 @@ ${footerHtml}
         headers: this.headers,
         text: `Olá ${userName}, sua conta foi marcada para exclusão e será removida permanentemente em 30 dias. Data de exclusão definitiva: ${formattedDate}. Para recuperar sua conta, entre em contato: suporte@baitabriq.com.br${footerText}`,
         html: this.wrap(`
-    ${this.header('BaitaBriq', '#f59e0b')}
+    ${this.header('#f59e0b')}
     <div style="padding:30px 20px;">
       <h2 style="color:#333;">Olá ${userName},</h2>
       <p style="color:#555;line-height:1.6;">Sua conta foi marcada para exclusão e será removida permanentemente em 30 dias.</p>
