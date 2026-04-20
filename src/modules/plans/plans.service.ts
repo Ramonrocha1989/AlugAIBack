@@ -1,47 +1,17 @@
 import { Injectable } from '@nestjs/common';
-
-export interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  maxAds: number;
-  features: string[];
-}
+import { PrismaService } from '../../common/prisma.service';
 
 @Injectable()
 export class PlansService {
-  private readonly plans: Plan[] = [
-    {
-      id: 'free',
-      name: 'Gratuito',
-      price: 0,
-      maxAds: 3,
-      features: [
-        'Até 3 anúncios ativos',
-        '5 fotos por anúncio',
-        'Suporte por email',
-      ],
-    },
-    {
-      id: 'lojista',
-      name: 'Lojista',
-      price: 50,
-      maxAds: -1,
-      features: [
-        'Anúncios ilimitados',
-        '15 fotos por anúncio',
-        'Selo Vendedor Verificado',
-        'Prioridade nas buscas',
-        'Suporte prioritário',
-      ],
-    },
-  ];
+  constructor(private prisma: PrismaService) {}
 
-  findAll(): Plan[] {
-    return this.plans;
+  async findAll() {
+    return this.prisma.plan.findMany({
+      orderBy: { price: 'asc' },
+    });
   }
 
-  findOne(id: string): Plan | undefined {
-    return this.plans.find(plan => plan.id === id);
+  async findOne(id: string) {
+    return this.prisma.plan.findUnique({ where: { id } });
   }
 }

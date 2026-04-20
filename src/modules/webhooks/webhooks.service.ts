@@ -56,6 +56,8 @@ export class WebhooksService {
       await this.processPayment(body.data?.id);
     } else if (body.type === 'topic_merchant_order_wh' || body.type === 'merchant_order') {
       await this.processMerchantOrder(body.data?.id || body.id);
+    } else if (body.type === 'subscription_preapproval' && body.action === 'updated') {
+      await this.processSubscriptionUpdate(body.data?.id);
     }
   }
 
@@ -97,6 +99,35 @@ export class WebhooksService {
     }
   }
 
+  private async processSubscriptionUpdate(subscriptionId: string) {
+    if (!subscriptionId) return;
+
+    try {
+      // Buscar dados da assinatura via API do Mercado Pago
+      const response = await fetch(
+        `https://api.mercadopago.com/preapproval/${subscriptionId}`,
+        { headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}` } },
+      );
+      const subscription = await response.json() as any;
+
+      const cancelledStatuses = ['cancelled', 'paused'];
+      if (!cancelledStatuses.includes(subscription.status)) return;
+
+      const externalReference = subscription.external_reference;
+      if (!externalReference) return;
+
+      const parts = externalReference.split('-');
+      const userId = parts.slice(0, -1).join('-');
+
+      if (!userId) return;
+
+      this.logger.log(`Assinatura ${subscriptionId} cancelada/pausada — rebaixando usuário ${userId}`);
+      await this.onPlanCancelled(userId);
+    } catch (error: any) {
+      this.logger.error(`Erro ao processar cancelamento de assinatura ${subscriptionId}: ${error.message}`);
+    }
+  }
+
   private async activatePlan(externalReference: string, paymentId: string) {
     if (!externalReference) {
       this.logger.warn(`Pagamento ${paymentId} sem external_reference`);
@@ -112,22 +143,64 @@ export class WebhooksService {
       return;
     }
 
-    const planLimits = {
-      free: { maxAds: 3, maxPremiumAds: 0, maxFeaturedAds: 0 },
-      lojista: { maxAds: 999, maxPremiumAds: 3, maxFeaturedAds: 5 },
-    };
-
-    const limits = planLimits[planType] || planLimits.free;
+    const plan = await this.prisma.plan.findUnique({ where: { id: planType } });
+    if (!plan) {
+      this.logger.error(`Plano não encontrado: ${planType}`);
+      return;
+    }
 
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         plan: planType,
         planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        ...limits,
+        maxAds: plan.maxAds,
+        maxPremiumAds: plan.maxPremiumAds,
+        maxFeaturedAds: plan.maxFeaturedAds,
       },
     });
 
+    // Remover expiração das máquinas ativas (plano pago = sem expiração)
+    if (plan.adDuration === -1) {
+      await this.prisma.machine.updateMany({
+        where: { ownerId: userId, status: 'ACTIVE', available: true },
+        data: { expiresAt: null },
+      });
+    }
+
     this.logger.log(`✅ Plano ${planType} ativado para usuário ${userId}`);
+  }
+
+  async onPlanCancelled(userId: string) {
+    const FREE_LIMIT = 2;
+
+    const machines = await this.prisma.machine.findMany({
+      where: { ownerId: userId, available: true, status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const toKeep = machines.slice(0, FREE_LIMIT);
+    const toDeactivate = machines.slice(FREE_LIMIT);
+
+    if (toDeactivate.length > 0) {
+      await this.prisma.machine.updateMany({
+        where: { id: { in: toDeactivate.map(m => m.id) } },
+        data: { available: false, status: 'INACTIVE' },
+      });
+    }
+
+    if (toKeep.length > 0) {
+      await this.prisma.machine.updateMany({
+        where: { id: { in: toKeep.map(m => m.id) } },
+        data: { expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
+      });
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { plan: 'free', maxAds: FREE_LIMIT, maxPremiumAds: 0, maxFeaturedAds: 0 },
+    });
+
+    this.logger.log(`⬇️ Usuário ${userId} rebaixado para plano free — ${toDeactivate.length} anúncios desativados`);
   }
 }

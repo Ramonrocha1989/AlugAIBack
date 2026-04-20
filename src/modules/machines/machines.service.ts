@@ -9,34 +9,49 @@ export class MachinesService {
   async create(userId: string, userName: string, dto: CreateMachineDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true, maxAds: true },
+      select: { plan: true },
     });
 
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
     }
 
-    if (user.plan === 'free') {
+    const plan = await this.prisma.plan.findUnique({ where: { id: user.plan } });
+
+    if (plan) {
       const activeAdsCount = await this.prisma.machine.count({
-        where: { 
-          ownerId: userId,
-          available: true,
-          status: 'ACTIVE'
-        },
+        where: { ownerId: userId, available: true, status: 'ACTIVE' },
       });
 
-      if (activeAdsCount >= user.maxAds) {
+      if (activeAdsCount >= plan.maxAds) {
         throw new ForbiddenException(
-          'Limite de anúncios atingido. Faça upgrade para o plano Lojista.'
+          `Limite de ${plan.maxAds} anúncios atingido. Faça upgrade do seu plano.`,
+        );
+      }
+
+      if (dto.images && dto.images.length > plan.maxPhotos) {
+        throw new ForbiddenException(
+          `Seu plano permite no máximo ${plan.maxPhotos} fotos por anúncio.`,
+        );
+      }
+
+      if (dto.videoUrl && plan.maxVideos === 0) {
+        throw new ForbiddenException(
+          'Seu plano não permite vídeos. Faça upgrade.',
         );
       }
     }
+
+    const expiresAt = plan && plan.adDuration === -1
+      ? null
+      : new Date(Date.now() + (plan?.adDuration ?? 30) * 24 * 60 * 60 * 1000);
 
     const machine = await this.prisma.machine.create({
       data: {
         ...dto,
         ownerId: userId,
         ownerName: userName,
+        expiresAt,
       },
       include: {
         owner: {
@@ -126,9 +141,9 @@ export class MachinesService {
         break;
       default:
         orderBy = [
+          { owner: { plan: 'desc' } },
           { isPremium: 'desc' },
           { isFeatured: 'desc' },
-          { owner: { plan: 'desc' } },
           { createdAt: 'desc' },
         ];
         break;
@@ -184,6 +199,7 @@ export class MachinesService {
             phone: true,
             isVerifiedSeller: true,
             companyName: true,
+            plan: true,
           },
         },
       },
@@ -201,6 +217,7 @@ export class MachinesService {
         phone: machine.ownerPhone || machine.owner.phone,
       },
       ownerPhone: machine.ownerPhone || machine.owner.phone,
+      ownerPlan: machine.owner.plan,
       isVerifiedSeller: machine.owner.isVerifiedSeller,
     };
   }
@@ -284,13 +301,7 @@ export class MachinesService {
     const existing = await this.prisma.machine.findUnique({
       where: { id },
       include: {
-        owner: {
-          select: {
-            plan: true,
-            maxPremiumAds: true,
-            maxFeaturedAds: true,
-          },
-        },
+        owner: { select: { plan: true } },
       },
     });
 
@@ -302,8 +313,20 @@ export class MachinesService {
       throw new ForbiddenException('Você só pode atualizar suas próprias máquinas');
     }
 
-    if (dto.isPremium !== undefined && dto.isPremium !== existing.isPremium) {
-      if (dto.isPremium) {
+    const plan = await this.prisma.plan.findUnique({ where: { id: existing.owner.plan } });
+
+    if (plan) {
+      if (dto.images && dto.images.length > plan.maxPhotos) {
+        throw new ForbiddenException(
+          `Seu plano permite no máximo ${plan.maxPhotos} fotos por anúncio.`,
+        );
+      }
+
+      if (dto.videoUrl && plan.maxVideos === 0) {
+        throw new ForbiddenException('Seu plano não permite vídeos. Faça upgrade.');
+      }
+
+      if (dto.isPremium && !existing.isPremium) {
         const premiumCount = await this.prisma.machine.count({
           where: {
             ownerId: userId,
@@ -314,16 +337,14 @@ export class MachinesService {
           },
         });
 
-        if (premiumCount >= existing.owner.maxPremiumAds) {
+        if (premiumCount >= plan.maxPremiumAds) {
           throw new ForbiddenException(
-            `Limite de anúncios Premium atingido (${existing.owner.maxPremiumAds} máximo).`
+            `Limite de anúncios Premium atingido (${plan.maxPremiumAds} máximo).`,
           );
         }
       }
-    }
 
-    if (dto.isFeatured !== undefined && dto.isFeatured !== existing.isFeatured) {
-      if (dto.isFeatured) {
+      if (dto.isFeatured && !existing.isFeatured) {
         const featuredCount = await this.prisma.machine.count({
           where: {
             ownerId: userId,
@@ -334,9 +355,9 @@ export class MachinesService {
           },
         });
 
-        if (featuredCount >= existing.owner.maxFeaturedAds) {
+        if (featuredCount >= plan.maxFeaturedAds) {
           throw new ForbiddenException(
-            `Limite de anúncios em Destaque atingido (${existing.owner.maxFeaturedAds} máximo).`
+            `Limite de anúncios em Destaque atingido (${plan.maxFeaturedAds} máximo).`,
           );
         }
       }

@@ -253,6 +253,7 @@ model Machine {
   status           String          @default("ACTIVE")
   isFeatured       Boolean         @default(false)
   isPremium        Boolean         @default(false)
+  expiresAt        DateTime?
   views            Int             @default(0)
   whatsappClicks   Int             @default(0)
   qualifiedLeads   Int             @default(0)
@@ -322,4 +323,25 @@ model Banner {
   createdAt  DateTime @default(now())
 
   @@map("banners")
+}
+
+model Plan {
+  id               String  @id @db.VarChar(20)
+  name             String  @db.VarChar(50)
+  price            Decimal @default(0) @db.Decimal(10, 2)
+  maxAds           Int     @default(2)
+  maxPhotos        Int     @default(3)
+  maxVideos        Int     @default(0)
+  adDuration       Int     @default(30)
+  maxPremiumAds    Int     @default(0)
+  maxFeaturedAds   Int     @default(0)
+  hasAnalytics     Boolean @default(false)
+  analyticsLevel   String  @default("none") @db.VarChar(20)
+  hasPriority      Boolean @default(false)
+  hasStorePage     Boolean @default(false)
+  hasVerifiedBadge Boolean @default(false)
+  supportLevel     String  @default("email_48h") @db.VarChar(20)
+  features         Json    @default("[]")
+
+  @@map("plans")
 }

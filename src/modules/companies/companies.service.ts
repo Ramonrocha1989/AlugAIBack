@@ -38,6 +38,8 @@ export class CompaniesService {
         location: true,
         website: true,
         createdAt: true,
+        plan: true,
+        isVerifiedSeller: true,
       },
     });
 
@@ -62,6 +64,8 @@ export class CompaniesService {
       phone: user.phone,
       location: user.location,
       website: user.website,
+      plan: user.plan,
+      is_verified: user.isVerifiedSeller,
       rating: avgRating._avg.rating || 0,
       total_reviews: totalReviews,
       created_at: user.createdAt,

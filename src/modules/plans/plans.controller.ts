@@ -12,7 +12,7 @@ export class PlansController {
   @Get()
   @ApiOperation({ summary: 'List all available plans' })
   @ApiResponse({ status: 200, description: 'Plans retrieved successfully' })
-  findAll() {
+  async findAll() {
     return this.plansService.findAll();
   }
 }
