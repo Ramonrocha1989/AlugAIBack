@@ -17,6 +17,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { HealthModule } from './modules/health/health.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from './common/prisma.service';
 
@@ -41,6 +42,7 @@ import { PrismaService } from './common/prisma.service';
     SubscriptionsModule,
     HealthModule,
     MetricsModule,
+    AnalyticsModule,
   ],
   providers: [
     PrismaService,

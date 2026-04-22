@@ -233,13 +233,34 @@ export class MachinesService {
             isVerifiedSeller: true,
           },
         },
+        _count: { select: { favorites: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
+    const machineIds = machines.map(m => m.id);
+
+    const proposalCounts = machineIds.length
+      ? await this.prisma.proposal.groupBy({
+          by: ['machineId', 'status'],
+          where: { machineId: { in: machineIds } },
+          _count: true,
+        })
+      : [];
+
+    const proposalMap = new Map<string, Record<string, number>>();
+    for (const p of proposalCounts) {
+      if (!proposalMap.has(p.machineId)) {
+        proposalMap.set(p.machineId, { pending: 0, accepted: 0, rejected: 0, countered: 0 });
+      }
+      proposalMap.get(p.machineId)![p.status.toLowerCase()] = p._count;
+    }
+
     return machines.map(m => ({
       ...m,
       isVerifiedSeller: m.owner.isVerifiedSeller,
+      favoritesCount: m._count.favorites,
+      proposalsCount: proposalMap.get(m.id) || { pending: 0, accepted: 0, rejected: 0, countered: 0 },
     }));
   }
 
