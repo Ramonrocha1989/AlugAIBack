@@ -82,6 +82,7 @@ model User {
   maxAds           Int       @default(3)
   maxPremiumAds    Int       @default(0)
   maxFeaturedAds   Int       @default(0)
+  subscriptionId   String?
   deletedAt        DateTime?
   status           String    @default("ACTIVE")
   companyName      String?

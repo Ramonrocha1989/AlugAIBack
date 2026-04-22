@@ -56,8 +56,8 @@ export class WebhooksService {
       await this.processPayment(body.data?.id);
     } else if (body.type === 'topic_merchant_order_wh' || body.type === 'merchant_order') {
       await this.processMerchantOrder(body.data?.id || body.id);
-    } else if (body.type === 'subscription_preapproval' && body.action === 'updated') {
-      await this.processSubscriptionUpdate(body.data?.id);
+    } else if (body.type === 'subscription_preapproval') {
+      await this.processSubscriptionUpdate(body.data?.id, body.action);
     }
   }
 
@@ -99,32 +99,56 @@ export class WebhooksService {
     }
   }
 
-  private async processSubscriptionUpdate(subscriptionId: string) {
+  private async processSubscriptionUpdate(subscriptionId: string, action: string) {
     if (!subscriptionId) return;
 
     try {
-      // Buscar dados da assinatura via API do Mercado Pago
       const response = await fetch(
         `https://api.mercadopago.com/preapproval/${subscriptionId}`,
         { headers: { Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}` } },
       );
       const subscription = await response.json() as any;
 
-      const cancelledStatuses = ['cancelled', 'paused'];
-      if (!cancelledStatuses.includes(subscription.status)) return;
-
       const externalReference = subscription.external_reference;
       if (!externalReference) return;
 
       const parts = externalReference.split('|');
       const userId = parts[0];
-
       if (!userId) return;
 
-      this.logger.log(`Assinatura ${subscriptionId} cancelada/pausada — rebaixando usuário ${userId}`);
-      await this.onPlanCancelled(userId);
+      // Ativação inicial ou renovação: salva subscriptionId e renova expiração
+      if (subscription.status === 'authorized') {
+        const planId = parts[1];
+        const plan = planId ? await this.prisma.plan.findUnique({ where: { id: planId } }) : null;
+
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: {
+            subscriptionId,
+            planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            ...(plan && {
+              plan: planId,
+              maxAds: plan.maxAds,
+              maxPremiumAds: plan.maxPremiumAds,
+              maxFeaturedAds: plan.maxFeaturedAds,
+            }),
+          },
+        });
+        this.logger.log(`🔄 Assinatura ${subscriptionId} ${action === 'created' ? 'ativada' : 'renovada'} — usuário ${userId} +30 dias`);
+        return;
+      }
+
+      // Cancelamento ou pausa
+      if (['cancelled', 'paused'].includes(subscription.status)) {
+        this.logger.log(`Assinatura ${subscriptionId} ${subscription.status} — rebaixando usuário ${userId}`);
+        await this.onPlanCancelled(userId);
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { subscriptionId: null },
+        });
+      }
     } catch (error: any) {
-      this.logger.error(`Erro ao processar cancelamento de assinatura ${subscriptionId}: ${error.message}`);
+      this.logger.error(`Erro ao processar assinatura ${subscriptionId}: ${error.message}`);
     }
   }
 
