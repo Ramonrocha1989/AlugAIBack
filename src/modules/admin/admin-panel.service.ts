@@ -52,6 +52,14 @@ export class AdminService {
         GROUP BY month ORDER BY month`,
     ]);
 
+    const paymentStatsRaw = await this.prisma.$queryRaw<{ status: string; count: number; total: number }[]>`
+      SELECT status, COUNT(*)::int as count, COALESCE(SUM(amount), 0)::float as total
+      FROM payments GROUP BY status`;
+
+    const allStatuses = ['approved', 'pending', 'rejected', 'cancelled', 'refunded', 'in_process'];
+    const paymentStatsMap = Object.fromEntries(paymentStatsRaw.map(r => [r.status, { count: r.count, total: r.total }]));
+    const payments = Object.fromEntries(allStatuses.map(s => [s, paymentStatsMap[s] || { count: 0, total: 0 }]));
+
     const months = this.getLast6Months();
     const usersMap = Object.fromEntries(usersRaw.map(r => [r.month, r.count]));
     const machinesMap = Object.fromEntries(machinesRaw.map(r => [r.month, r.count]));
@@ -71,6 +79,7 @@ export class AdminService {
         description: 'Novo usuário cadastrado',
         createdAt: u.createdAt,
       })),
+      payments,
       charts: {
         users: months.map(m => ({ month: m, count: usersMap[m] || 0 })),
         machines: months.map(m => ({ month: m, count: machinesMap[m] || 0 })),

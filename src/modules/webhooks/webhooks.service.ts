@@ -67,13 +67,37 @@ export class WebhooksService {
     try {
       const payment = new Payment(this.client);
       const paymentData = await payment.get({ id: paymentId });
+      const status = paymentData.status || '';
 
-      if (paymentData.status !== 'approved') {
-        this.logger.log(`Pagamento ${paymentId} com status: ${paymentData.status}`);
-        return;
+      this.logger.log(`Pagamento ${paymentId} com status: ${status}`);
+
+      const existingPayment = await this.prisma.payment.findFirst({
+        where: { mercadoPagoId: paymentId.toString() },
+      });
+
+      if (existingPayment) {
+        await this.prisma.payment.update({
+          where: { id: existingPayment.id },
+          data: { status },
+        });
       }
 
-      await this.activatePlan(paymentData.external_reference || '', paymentId);
+      switch (status) {
+        case 'approved':
+          await this.activatePlan(paymentData.external_reference || '', paymentId);
+          break;
+        case 'refunded':
+          if (existingPayment) {
+            await this.onPlanCancelled(existingPayment.userId);
+            this.logger.log(`\uD83D\uDCB8 Reembolso — usuário ${existingPayment.userId} rebaixado`);
+          }
+          break;
+        case 'rejected':
+        case 'cancelled':
+        case 'in_process':
+          this.logger.log(`Pagamento ${paymentId} status: ${status}`);
+          break;
+      }
     } catch (error: any) {
       this.logger.error(`Erro ao processar pagamento ${paymentId}: ${error.message}`);
     }
