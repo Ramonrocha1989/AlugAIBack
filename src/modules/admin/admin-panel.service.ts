@@ -6,15 +6,27 @@ import { BanUserDto, VerifySellerDto, UpdateMachineStatusDto, FeatureMachineDto,
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
+  private getLast6Months(): string[] {
+    const months: string[] = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return months;
+  }
+
   async getStats() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-    const [totalUsers, totalMachines, totalProposals, totalReviews, newUsersThisMonth, newMachinesThisMonth] = await Promise.all([
+    const [totalUsers, totalMachines, totalProposals, totalReviews, pendingMachines, newUsersThisMonth, newMachinesThisMonth] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.machine.count(),
       this.prisma.proposal.count(),
       this.prisma.review.count(),
+      this.prisma.machine.count({ where: { status: 'PENDING' } }),
       this.prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
       this.prisma.machine.count({ where: { createdAt: { gte: startOfMonth } } }),
     ]);
@@ -25,11 +37,32 @@ export class AdminService {
       select: { id: true, name: true, createdAt: true },
     });
 
+    const [usersRaw, machinesRaw, revenueRaw] = await Promise.all([
+      this.prisma.$queryRaw<{ month: string; count: number }[]>`
+        SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COUNT(*)::int as count
+        FROM users WHERE "createdAt" >= ${sixMonthsAgo}
+        GROUP BY month ORDER BY month`,
+      this.prisma.$queryRaw<{ month: string; count: number }[]>`
+        SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COUNT(*)::int as count
+        FROM machines WHERE "createdAt" >= ${sixMonthsAgo}
+        GROUP BY month ORDER BY month`,
+      this.prisma.$queryRaw<{ month: string; amount: number }[]>`
+        SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, COALESCE(SUM(amount), 0)::float as amount
+        FROM payments WHERE status = 'approved' AND "createdAt" >= ${sixMonthsAgo}
+        GROUP BY month ORDER BY month`,
+    ]);
+
+    const months = this.getLast6Months();
+    const usersMap = Object.fromEntries(usersRaw.map(r => [r.month, r.count]));
+    const machinesMap = Object.fromEntries(machinesRaw.map(r => [r.month, r.count]));
+    const revenueMap = Object.fromEntries(revenueRaw.map(r => [r.month, r.amount]));
+
     return {
       totalUsers,
       totalMachines,
       totalProposals,
       totalReviews,
+      pendingMachines,
       newUsersThisMonth,
       newMachinesThisMonth,
       recentActivity: recentActivity.map(u => ({
@@ -38,6 +71,11 @@ export class AdminService {
         description: 'Novo usuário cadastrado',
         createdAt: u.createdAt,
       })),
+      charts: {
+        users: months.map(m => ({ month: m, count: usersMap[m] || 0 })),
+        machines: months.map(m => ({ month: m, count: machinesMap[m] || 0 })),
+        revenue: months.map(m => ({ month: m, amount: revenueMap[m] || 0 })),
+      },
     };
   }
 
