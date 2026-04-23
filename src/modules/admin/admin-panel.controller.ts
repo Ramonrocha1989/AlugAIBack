@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin-panel.service';
 import { 
   BanUserDto, VerifySellerDto, UpdateMachineStatusDto, FeatureMachineDto, 
   UpdateSettingsDto, CreateBannerDto, UpdateUserPlanDto,
+  CreateCategoryDto, UpdateCategoryDto, ReorderCategoryDto, UpdatePlanDto,
   BanUserSchema, VerifySellerSchema, UpdateMachineStatusSchema, FeatureMachineSchema,
-  UpdateSettingsSchema, CreateBannerSchema, UpdateUserPlanSchema
+  UpdateSettingsSchema, CreateBannerSchema, UpdateUserPlanSchema,
+  CreateCategorySchema, UpdateCategorySchema, ReorderCategorySchema, UpdatePlanSchema
 } from './dto/admin.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -158,5 +160,63 @@ export class AdminPanelController {
     @Body(new ZodValidationPipe(UpdateUserPlanSchema)) dto: UpdateUserPlanDto,
   ) {
     return this.adminService.updateUserPlan(id, dto);
+  }
+
+  // === CATEGORIES ===
+
+  @Get('categories')
+  @ApiOperation({ summary: 'Listar categorias' })
+  async getCategories() {
+    return this.adminService.getCategories();
+  }
+
+  @Post('categories')
+  @ApiOperation({ summary: 'Criar categoria' })
+  async createCategory(
+    @Body(new ZodValidationPipe(CreateCategorySchema)) dto: CreateCategoryDto,
+  ) {
+    return this.adminService.createCategory(dto);
+  }
+
+  @Put('categories/:id')
+  @ApiOperation({ summary: 'Editar categoria' })
+  async updateCategory(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateCategorySchema)) dto: UpdateCategoryDto,
+  ) {
+    return this.adminService.updateCategory(id, dto);
+  }
+
+  @Delete('categories/:id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Deletar categoria' })
+  async deleteCategory(@Param('id') id: string) {
+    return this.adminService.deleteCategory(id);
+  }
+
+  @Patch('categories/:id/order')
+  @ApiOperation({ summary: 'Reordenar categoria' })
+  async reorderCategory(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(ReorderCategorySchema)) dto: ReorderCategoryDto,
+  ) {
+    return this.adminService.reorderCategory(id, dto);
+  }
+
+  // === PLANS ===
+
+  @Get('plans')
+  @ApiOperation({ summary: 'Listar planos' })
+  async getPlans() {
+    return this.adminService.getPlans();
+  }
+
+  @Put('plans/:id')
+  @ApiOperation({ summary: 'Editar plano' })
+  async updatePlan(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdatePlanSchema)) dto: UpdatePlanDto,
+  ) {
+    return this.adminService.updatePlan(id, dto);
   }
 }

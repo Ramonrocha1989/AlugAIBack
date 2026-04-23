@@ -18,6 +18,8 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
 import { HealthModule } from './modules/health/health.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from './common/prisma.service';
 
@@ -43,6 +45,8 @@ import { PrismaService } from './common/prisma.service';
     HealthModule,
     MetricsModule,
     AnalyticsModule,
+    CategoriesModule,
+    SettingsModule,
   ],
   providers: [
     PrismaService,

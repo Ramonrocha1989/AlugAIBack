@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
-import { BanUserDto, VerifySellerDto, UpdateMachineStatusDto, FeatureMachineDto, UpdateSettingsDto, CreateBannerDto, UpdateUserPlanDto } from './dto/admin.dto';
+import { BanUserDto, VerifySellerDto, UpdateMachineStatusDto, FeatureMachineDto, UpdateSettingsDto, CreateBannerDto, UpdateUserPlanDto, CreateCategoryDto, UpdateCategoryDto, ReorderCategoryDto, UpdatePlanDto } from './dto/admin.dto';
 
 @Injectable()
 export class AdminService {
@@ -225,26 +225,30 @@ export class AdminService {
     ]);
 
     return {
-      siteName: settings?.siteName || 'Mercado Máquina',
-      homeTitle: settings?.homeTitle,
-      homeDescription: settings?.homeDescription,
+      siteName: settings?.siteName || 'BaitaBriq',
+      homeTitle: settings?.homeTitle || '',
+      homeDescription: settings?.homeDescription || '',
+      maintenanceMode: settings?.maintenanceMode || false,
+      maintenanceMessage: settings?.maintenanceMessage || 'Estamos em manutenção, voltamos em breve!',
+      whatsappSupport: settings?.whatsappSupport || '5553984590461',
+      phoneSupport: settings?.phoneSupport || '(53) 98459-0461',
+      emailSupport: settings?.emailSupport || 'contato@baitabriq.com.br',
+      socialLinks: settings?.socialLinks || { instagram: '', facebook: '', youtube: '', linkedin: '' },
+      termsOfUse: settings?.termsOfUse || '',
+      privacyPolicy: settings?.privacyPolicy || '',
       banners,
     };
   }
 
   async updateSettings(dto: UpdateSettingsDto) {
     const existing = await this.prisma.siteSetting.findFirst();
+    const data: any = { ...dto };
+    if (dto.socialLinks) data.socialLinks = dto.socialLinks;
 
     if (existing) {
-      return this.prisma.siteSetting.update({
-        where: { id: existing.id },
-        data: dto,
-      });
+      return this.prisma.siteSetting.update({ where: { id: existing.id }, data });
     }
-
-    return this.prisma.siteSetting.create({
-      data: dto,
-    });
+    return this.prisma.siteSetting.create({ data });
   }
 
   async createBanner(dto: CreateBannerDto) {
@@ -293,5 +297,55 @@ export class AdminService {
         maxFeaturedAds: true,
       },
     });
+  }
+
+  // === CATEGORIES ===
+
+  async getCategories() {
+    const categories = await this.prisma.category.findMany({ orderBy: { order: 'asc' } });
+    const counts = await this.prisma.machine.groupBy({
+      by: ['category'],
+      _count: true,
+    });
+    const countMap = Object.fromEntries(counts.map(c => [c.category, c._count]));
+
+    return categories.map(cat => ({
+      ...cat,
+      machineCount: countMap[cat.slug?.toUpperCase()] || 0,
+    }));
+  }
+
+  async createCategory(dto: CreateCategoryDto) {
+    const maxOrder = await this.prisma.category.findFirst({
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+
+    return this.prisma.category.create({
+      data: { ...dto, order: (maxOrder?.order || 0) + 1 },
+    });
+  }
+
+  async updateCategory(id: string, dto: UpdateCategoryDto) {
+    return this.prisma.category.update({ where: { id }, data: dto });
+  }
+
+  async deleteCategory(id: string) {
+    await this.prisma.category.delete({ where: { id } });
+    return { message: 'Categoria deletada com sucesso' };
+  }
+
+  async reorderCategory(id: string, dto: ReorderCategoryDto) {
+    return this.prisma.category.update({ where: { id }, data: { order: dto.order } });
+  }
+
+  // === PLANS ===
+
+  async getPlans() {
+    return this.prisma.plan.findMany({ orderBy: { price: 'asc' } });
+  }
+
+  async updatePlan(id: string, dto: UpdatePlanDto) {
+    return this.prisma.plan.update({ where: { id }, data: dto });
   }
 }

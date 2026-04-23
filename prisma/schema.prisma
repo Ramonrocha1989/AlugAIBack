@@ -310,13 +310,33 @@ model Proposal {
 }
 
 model SiteSetting {
-  id              String   @id @default(uuid())
-  siteName        String   @default("Mercado Máquina")
-  homeTitle       String?
-  homeDescription String?  @db.Text
-  updatedAt       DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  siteName            String   @default("BaitaBriq")
+  homeTitle           String?
+  homeDescription     String?  @db.Text
+  maintenanceMode     Boolean  @default(false)
+  maintenanceMessage  String?  @db.Text
+  whatsappSupport     String?
+  phoneSupport        String?
+  emailSupport        String?
+  socialLinks         Json     @default("{\"instagram\":\"\",\"facebook\":\"\",\"youtube\":\"\",\"linkedin\":\"\"}") 
+  termsOfUse          String?  @db.Text
+  privacyPolicy       String?  @db.Text
+  updatedAt           DateTime @updatedAt
 
   @@map("site_settings")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  icon      String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("categories")
 }
 
 model Banner {
@@ -367,6 +387,7 @@ model Plan {
   hasVerifiedBadge Boolean @default(false)
   supportLevel     String  @default("email_48h") @db.VarChar(20)
   features         Json    @default("[]")
+  isActive         Boolean @default(true)
 
   @@map("plans")
 }
