@@ -34,3 +34,10 @@ export type UpdateMachineStatusDto = z.infer<typeof UpdateMachineStatusSchema>;
 export type FeatureMachineDto = z.infer<typeof FeatureMachineSchema>;
 export type UpdateSettingsDto = z.infer<typeof UpdateSettingsSchema>;
 export type CreateBannerDto = z.infer<typeof CreateBannerSchema>;
+
+export const UpdateUserPlanSchema = z.object({
+  plan: z.enum(['free', 'basico', 'profissional', 'premium']),
+  expiresAt: z.string().datetime().nullable().optional(),
+});
+
+export type UpdateUserPlanDto = z.infer<typeof UpdateUserPlanSchema>;

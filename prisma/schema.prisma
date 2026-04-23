@@ -79,7 +79,9 @@ model User {
   isVerifiedSeller Boolean   @default(false)
   plan             String    @default("free")
   planExpiresAt    DateTime?
-  maxAds           Int       @default(3)
+  maxAds           Int       @default(2)
+  maxPhotos        Int       @default(3)
+  maxVideos        Int       @default(0)
   maxPremiumAds    Int       @default(0)
   maxFeaturedAds   Int       @default(0)
   subscriptionId   String?

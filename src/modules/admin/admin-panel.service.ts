@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
-import { BanUserDto, VerifySellerDto, UpdateMachineStatusDto, FeatureMachineDto, UpdateSettingsDto, CreateBannerDto } from './dto/admin.dto';
+import { BanUserDto, VerifySellerDto, UpdateMachineStatusDto, FeatureMachineDto, UpdateSettingsDto, CreateBannerDto, UpdateUserPlanDto } from './dto/admin.dto';
 
 @Injectable()
 export class AdminService {
@@ -67,6 +67,10 @@ export class AdminService {
           plan: true,
           planExpiresAt: true,
           maxAds: true,
+          maxPhotos: true,
+          maxVideos: true,
+          maxPremiumAds: true,
+          maxFeaturedAds: true,
           emailVerified: true,
           isBanned: true,
           isVerifiedSeller: true,
@@ -87,7 +91,7 @@ export class AdminService {
     ]);
 
     return {
-      users,
+      data: users,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -255,5 +259,34 @@ export class AdminService {
   async deleteBanner(id: string) {
     await this.prisma.banner.delete({ where: { id } });
     return { message: 'Banner deletado com sucesso' };
+  }
+
+  async updateUserPlan(userId: string, dto: UpdateUserPlanDto) {
+    const plan = await this.prisma.plan.findUniqueOrThrow({ where: { id: dto.plan } });
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        plan: dto.plan,
+        planExpiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        maxAds: plan.maxAds,
+        maxPhotos: plan.maxPhotos,
+        maxVideos: plan.maxVideos,
+        maxPremiumAds: plan.maxPremiumAds,
+        maxFeaturedAds: plan.maxFeaturedAds,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        plan: true,
+        planExpiresAt: true,
+        maxAds: true,
+        maxPhotos: true,
+        maxVideos: true,
+        maxPremiumAds: true,
+        maxFeaturedAds: true,
+      },
+    });
   }
 }

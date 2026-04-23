@@ -3,9 +3,9 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { AdminService } from './admin-panel.service';
 import { 
   BanUserDto, VerifySellerDto, UpdateMachineStatusDto, FeatureMachineDto, 
-  UpdateSettingsDto, CreateBannerDto,
+  UpdateSettingsDto, CreateBannerDto, UpdateUserPlanDto,
   BanUserSchema, VerifySellerSchema, UpdateMachineStatusSchema, FeatureMachineSchema,
-  UpdateSettingsSchema, CreateBannerSchema
+  UpdateSettingsSchema, CreateBannerSchema, UpdateUserPlanSchema
 } from './dto/admin.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -143,5 +143,14 @@ export class AdminPanelController {
   @ApiOperation({ summary: 'Deletar banner' })
   async deleteBanner(@Param('id') id: string) {
     return this.adminService.deleteBanner(id);
+  }
+
+  @Patch('users/:id/plan')
+  @ApiOperation({ summary: 'Alterar plano do usuário' })
+  async updateUserPlan(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(UpdateUserPlanSchema)) dto: UpdateUserPlanDto,
+  ) {
+    return this.adminService.updateUserPlan(id, dto);
   }
 }
