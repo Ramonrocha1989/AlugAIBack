@@ -128,12 +128,20 @@ export class AdminService {
     });
   }
 
-  async getMachines(page: number = 1, limit: number = 20, status?: string) {
+  async getMachines(page: number = 1, limit: number = 20, status?: string, search?: string) {
     const skip = (page - 1) * limit;
     const where: any = {};
 
     if (status && status !== 'all') {
       where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { manufacturer: { contains: search, mode: 'insensitive' } },
+        { model: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     const [machines, total] = await Promise.all([
@@ -311,7 +319,7 @@ export class AdminService {
 
     return categories.map(cat => ({
       ...cat,
-      machineCount: countMap[cat.slug?.toUpperCase()] || 0,
+      machineCount: countMap[cat.slug] || 0,
     }));
   }
 

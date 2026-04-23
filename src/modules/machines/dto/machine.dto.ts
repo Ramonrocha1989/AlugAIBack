@@ -1,16 +1,7 @@
 import { z } from 'zod';
 
 export const BusinessTypeEnum = z.enum(['SALE', 'RENTAL', 'EXCHANGE', 'SERVICE']);
-export const MachineCategoryEnum = z.enum([
-  'TRACTORS',
-  'HARVESTERS',
-  'PLANTING',
-  'SPRAYING',
-  'HAYMAKING',
-  'IMPLEMENTS',
-  'LIVESTOCK',
-  'CONSTRUCTION',
-]);
+
 
 export const QuickTagsEnum = z.enum([
   'NEW_TIRES',
@@ -32,7 +23,7 @@ export const CreateMachineSchema = z.object({
     .min(50, 'Descrição deve ter no mínimo 50 caracteres')
     .max(5000, 'Descrição deve ter no máximo 5000 caracteres')
     .trim(),
-  category: MachineCategoryEnum,
+  category: z.string().min(1, 'Categoria obrigatória'),
   manufacturer: z.string().min(2, 'Fabricante obrigatório').max(100).trim(),
   model: z.string().min(1, 'Modelo obrigatório').max(100).trim(),
   yearModel: z.number().int().min(1980).max(new Date().getFullYear() + 1),
@@ -62,7 +53,7 @@ export const UpdateMachineSchema = CreateMachineSchema.partial().extend({
 
 export const MachineFiltersSchema = z.object({
   search: z.string().optional(),
-  category: MachineCategoryEnum.optional(),
+  category: z.string().optional(),
   businessType: BusinessTypeEnum.optional(),
   manufacturer: z.string().optional(),
   state: z.string().length(2).toUpperCase().optional(),

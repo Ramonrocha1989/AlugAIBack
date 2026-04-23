@@ -72,11 +72,13 @@ export class AdminPanelController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
     return this.adminService.getMachines(
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 20,
       status,
+      search,
     );
   }
 

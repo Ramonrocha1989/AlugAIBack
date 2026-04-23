@@ -24,17 +24,6 @@ enum BusinessType {
   SERVICE
 }
 
-enum MachineCategory {
-  TRACTORS
-  HARVESTERS
-  PLANTING
-  SPRAYING
-  HAYMAKING
-  IMPLEMENTS
-  LIVESTOCK
-  CONSTRUCTION
-}
-
 enum NotificationType {
   NEW_REVIEW
   PRICE_DROP
@@ -232,7 +221,7 @@ model Machine {
   businessType     BusinessType
   name             String
   description      String          @db.Text
-  category         MachineCategory
+  category         String
   manufacturer     String
   model            String
   yearModel        Int

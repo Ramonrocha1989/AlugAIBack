@@ -1,6 +1,5 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
-import { MachineCategory } from '@prisma/client';
 
 @Injectable()
 export class AnalyticsService {
@@ -70,7 +69,7 @@ export class AnalyticsService {
     };
   }
 
-  async getCategoryBenchmarks(userId: string, category: MachineCategory) {
+  async getCategoryBenchmarks(userId: string, category: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true },

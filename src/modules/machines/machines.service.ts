@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
 import { CreateMachineDto, UpdateMachineDto, MachineFiltersDto } from './dto/machine.dto';
 
@@ -9,11 +9,18 @@ export class MachinesService {
   async create(userId: string, userName: string, dto: CreateMachineDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true },
+      select: { plan: true, isVerifiedSeller: true },
     });
 
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const categoryExists = await this.prisma.category.findFirst({
+      where: { slug: dto.category, isActive: true },
+    });
+    if (!categoryExists) {
+      throw new BadRequestException('Categoria inválida');
     }
 
     const plan = await this.prisma.plan.findUnique({ where: { id: user.plan } });
@@ -51,6 +58,7 @@ export class MachinesService {
         ...dto,
         ownerId: userId,
         ownerName: userName,
+        status: user.isVerifiedSeller ? 'ACTIVE' : 'PENDING',
         expiresAt,
       },
       include: {
@@ -332,6 +340,15 @@ export class MachinesService {
 
     if (existing.ownerId !== userId) {
       throw new ForbiddenException('Você só pode atualizar suas próprias máquinas');
+    }
+
+    if (dto.category) {
+      const categoryExists = await this.prisma.category.findFirst({
+        where: { slug: dto.category, isActive: true },
+      });
+      if (!categoryExists) {
+        throw new BadRequestException('Categoria inválida');
+      }
     }
 
     const plan = await this.prisma.plan.findUnique({ where: { id: existing.owner.plan } });
