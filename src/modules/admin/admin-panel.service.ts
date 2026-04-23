@@ -41,7 +41,7 @@ export class AdminService {
     };
   }
 
-  async getUsers(page: number = 1, limit: number = 20, search?: string) {
+  async getUsers(page: number = 1, limit: number = 20, search?: string, plan?: string, status?: string, userType?: string) {
     const skip = (page - 1) * limit;
     const where: any = {};
 
@@ -51,6 +51,10 @@ export class AdminService {
         { email: { contains: search, mode: 'insensitive' } },
       ];
     }
+    if (plan) where.plan = plan;
+    if (status === 'BANNED') where.isBanned = true;
+    if (status === 'ACTIVE') where.isBanned = false;
+    if (userType) where.userType = userType;
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
@@ -76,6 +80,7 @@ export class AdminService {
           isVerifiedSeller: true,
           status: true,
           createdAt: true,
+          lastLoginAt: true,
           company: { select: { id: true, name: true } },
           _count: {
             select: {

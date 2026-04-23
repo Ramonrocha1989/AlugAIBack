@@ -91,6 +91,7 @@ model User {
   description      String?   @db.Text
   website          String?
   location         String?
+  lastLoginAt      DateTime?
   createdAt        DateTime  @default(now())
 
   company                 Company?                 @relation(fields: [companyId], references: [id])

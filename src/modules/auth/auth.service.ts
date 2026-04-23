@@ -136,6 +136,11 @@ export class AuthService {
       throw new ForbiddenException('Sua conta foi marcada para exclusão. Entre em contato com o suporte.');
     }
 
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
     const accessToken = this.generateToken(user.id, user.email, user.role);
     const refreshToken = this.generateRefreshToken();
     await this.saveRefreshToken(user.id, refreshToken);

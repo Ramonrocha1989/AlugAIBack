@@ -32,11 +32,17 @@ export class AdminPanelController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
+    @Query('plan') plan?: string,
+    @Query('status') status?: string,
+    @Query('userType') userType?: string,
   ) {
     return this.adminService.getUsers(
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 20,
       search,
+      plan,
+      status,
+      userType,
     );
   }
 
