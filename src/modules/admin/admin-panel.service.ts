@@ -168,11 +168,18 @@ export class AdminService {
   }
 
   async verifyUser(id: string, dto: VerifySellerDto) {
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id },
       data: { isVerifiedSeller: dto.isVerifiedSeller },
       select: { id: true, name: true, email: true, isVerifiedSeller: true },
     });
+
+    await this.prisma.machine.updateMany({
+      where: { ownerId: id },
+      data: { isVerifiedSeller: dto.isVerifiedSeller },
+    });
+
+    return user;
   }
 
   async getMachines(page: number = 1, limit: number = 20, status?: string, search?: string) {

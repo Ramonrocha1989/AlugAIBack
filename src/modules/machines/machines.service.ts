@@ -59,6 +59,7 @@ export class MachinesService {
         ownerId: userId,
         ownerName: userName,
         status: user.isVerifiedSeller ? 'ACTIVE' : 'PENDING',
+        isVerifiedSeller: user.isVerifiedSeller,
         expiresAt,
       },
       include: {
