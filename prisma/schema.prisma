@@ -80,6 +80,11 @@ model User {
   description      String?   @db.Text
   website          String?
   location         String?
+  logo             String?
+  banner           String?
+  businessHours    String?
+  categoriesWorked String[]
+  gallery          String[]
   lastLoginAt      DateTime?
   createdAt        DateTime  @default(now())
 

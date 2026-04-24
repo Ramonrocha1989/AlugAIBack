@@ -1,60 +1,95 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
+import { UpdateProfileDto } from './dto/company.dto';
+
+const PROFILE_SELECT = {
+  id: true,
+  companyName: true,
+  description: true,
+  phone: true,
+  location: true,
+  website: true,
+  logo: true,
+  banner: true,
+  businessHours: true,
+  categoriesWorked: true,
+  gallery: true,
+  plan: true,
+  isVerifiedSeller: true,
+  createdAt: true,
+};
 
 @Injectable()
 export class CompaniesService {
   constructor(private prisma: PrismaService) {}
 
-  async getMyCompany(companyId: string) {
-    const company = await this.prisma.company.findUnique({
-      where: { id: companyId },
-      include: {
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-          },
-        },
-      },
+  async getMyProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: PROFILE_SELECT,
     });
 
-    if (!company) {
-      throw new NotFoundException('Empresa não encontrada');
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    const [avgRating, totalReviews] = await Promise.all([
+      this.prisma.review.aggregate({ where: { reviewedUserId: userId }, _avg: { rating: true } }),
+      this.prisma.review.count({ where: { reviewedUserId: userId } }),
+    ]);
+
+    return {
+      ...user,
+      rating: avgRating._avg.rating || 0,
+      total_reviews: totalReviews,
+    };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true },
+    });
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    const plan = user.plan;
+
+    if (dto.logo && !['basico', 'profissional', 'premium'].includes(plan)) {
+      throw new ForbiddenException('Logo disponível a partir do plano Básico');
+    }
+    if (dto.banner && !['profissional', 'premium'].includes(plan)) {
+      throw new ForbiddenException('Banner disponível a partir do plano Profissional');
+    }
+    if ((dto.businessHours || dto.categoriesWorked) && !['profissional', 'premium'].includes(plan)) {
+      throw new ForbiddenException('Disponível a partir do plano Profissional');
+    }
+    if (dto.phone && !['profissional', 'premium'].includes(plan)) {
+      throw new ForbiddenException('Telefone público disponível a partir do plano Profissional');
+    }
+    if (dto.website && plan !== 'premium') {
+      throw new ForbiddenException('Website disponível apenas no plano Premium');
+    }
+    if (dto.gallery && plan !== 'premium') {
+      throw new ForbiddenException('Galeria disponível apenas no plano Premium');
     }
 
-    return company;
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: dto,
+      select: PROFILE_SELECT,
+    });
   }
 
   async getCompany(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        companyName: true,
-        description: true,
-        phone: true,
-        location: true,
-        website: true,
-        createdAt: true,
-        plan: true,
-        isVerifiedSeller: true,
-      },
+      select: PROFILE_SELECT,
     });
 
-    if (!user) {
-      throw new NotFoundException('Empresa não encontrada');
-    }
+    if (!user) throw new NotFoundException('Empresa não encontrada');
 
     const [avgRating, totalReviews] = await Promise.all([
-      this.prisma.review.aggregate({
-        where: { reviewedUserId: id },
-        _avg: { rating: true },
-      }),
-      this.prisma.review.count({
-        where: { reviewedUserId: id },
-      }),
+      this.prisma.review.aggregate({ where: { reviewedUserId: id }, _avg: { rating: true } }),
+      this.prisma.review.count({ where: { reviewedUserId: id } }),
     ]);
 
     return {
@@ -64,6 +99,11 @@ export class CompaniesService {
       phone: user.phone,
       location: user.location,
       website: user.website,
+      logo: user.logo,
+      banner: user.banner,
+      businessHours: user.businessHours,
+      categoriesWorked: user.categoriesWorked,
+      gallery: user.gallery,
       plan: user.plan,
       is_verified: user.isVerifiedSeller,
       rating: avgRating._avg.rating || 0,
@@ -74,19 +114,10 @@ export class CompaniesService {
 
   async getCompanyMachines(userId: string) {
     const machines = await this.prisma.machine.findMany({
-      where: {
-        ownerId: userId,
-        status: 'ACTIVE',
-        available: true,
-      },
+      where: { ownerId: userId, status: 'ACTIVE', available: true },
       include: {
         owner: {
-          select: {
-            id: true,
-            name: true,
-            isVerifiedSeller: true,
-            plan: true,
-          },
+          select: { id: true, name: true, isVerifiedSeller: true, plan: true },
         },
       },
       orderBy: { createdAt: 'desc' },

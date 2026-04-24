@@ -1,8 +1,10 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CompaniesService } from './companies.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser, Public } from '../auth/decorators/auth.decorators';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { UpdateProfileSchema, UpdateProfileDto } from './dto/company.dto';
 
 @ApiTags('companies')
 @Controller('companies')
@@ -12,18 +14,25 @@ export class CompaniesController {
   @Get('me')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get my company details' })
-  @ApiResponse({ status: 200, description: 'Company retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'Company not found' })
+  @ApiOperation({ summary: 'Meu perfil de empresa' })
   async getMyCompany(@CurrentUser() user: any) {
-    return this.companiesService.getMyCompany(user.companyId);
+    return this.companiesService.getMyProfile(user.userId);
+  }
+
+  @Put('profile')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Atualizar perfil da empresa' })
+  async updateProfile(
+    @CurrentUser() user: any,
+    @Body(new ZodValidationPipe(UpdateProfileSchema)) dto: UpdateProfileDto,
+  ) {
+    return this.companiesService.updateProfile(user.userId, dto);
   }
 
   @Get(':id')
   @Public()
-  @ApiOperation({ summary: 'Dados da empresa' })
-  @ApiResponse({ status: 200, description: 'Empresa encontrada' })
-  @ApiResponse({ status: 404, description: 'Empresa não encontrada' })
+  @ApiOperation({ summary: 'Perfil público da empresa' })
   async getCompany(@Param('id') id: string) {
     return this.companiesService.getCompany(id);
   }
@@ -31,7 +40,6 @@ export class CompaniesController {
   @Get(':id/machines')
   @Public()
   @ApiOperation({ summary: 'Máquinas da empresa' })
-  @ApiResponse({ status: 200, description: 'Máquinas recuperadas' })
   async getCompanyMachines(@Param('id') id: string) {
     return this.companiesService.getCompanyMachines(id);
   }
