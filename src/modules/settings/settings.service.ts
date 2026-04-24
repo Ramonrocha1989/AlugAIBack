@@ -13,6 +13,8 @@ export class SettingsService {
 
     return {
       siteName: settings?.siteName || 'BaitaBriq',
+      homeTitle: settings?.homeTitle || '',
+      homeDescription: settings?.homeDescription || '',
       banners,
       whatsappSupport: settings?.whatsappSupport || '5553984590461',
       phoneSupport: settings?.phoneSupport || '(53) 98459-0461',
