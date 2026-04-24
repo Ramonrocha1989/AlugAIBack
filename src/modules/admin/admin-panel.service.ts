@@ -410,4 +410,74 @@ export class AdminService {
   async updatePlan(id: string, dto: UpdatePlanDto) {
     return this.prisma.plan.update({ where: { id }, data: dto });
   }
+
+  // === VERIFICATION REQUESTS ===
+
+  async getVerificationRequests(page: number = 1, limit: number = 20, status?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (status) where.status = status;
+
+    const [requests, total] = await Promise.all([
+      this.prisma.verificationRequest.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          user: { select: { id: true, name: true, email: true, isVerifiedSeller: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.verificationRequest.count({ where }),
+    ]);
+
+    return {
+      data: requests.map(r => ({
+        id: r.id,
+        userId: r.userId,
+        userName: r.user.name,
+        userEmail: r.user.email,
+        documentType: r.documentType,
+        documentNumber: r.documentNumber,
+        companyName: r.companyName,
+        phone: r.phone,
+        email: r.email,
+        reason: r.reason,
+        status: r.status,
+        rejectReason: r.rejectReason,
+        createdAt: r.createdAt,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async approveVerification(id: string) {
+    const request = await this.prisma.verificationRequest.update({
+      where: { id },
+      data: { status: 'APPROVED' },
+    });
+
+    await this.prisma.user.update({
+      where: { id: request.userId },
+      data: { isVerifiedSeller: true },
+    });
+
+    await this.prisma.machine.updateMany({
+      where: { ownerId: request.userId },
+      data: { isVerifiedSeller: true },
+    });
+
+    return { message: 'Vendedor verificado com sucesso' };
+  }
+
+  async rejectVerification(id: string, reason?: string) {
+    await this.prisma.verificationRequest.update({
+      where: { id },
+      data: { status: 'REJECTED', rejectReason: reason || null },
+    });
+
+    return { message: 'Solicitação rejeitada' };
+  }
 }

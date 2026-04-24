@@ -10,6 +10,7 @@ import {
   CreateCategorySchema, UpdateCategorySchema, ReorderCategorySchema, UpdatePlanSchema
 } from './dto/admin.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { RejectVerificationSchema, RejectVerificationDto } from '../verification/verification.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/auth.decorators';
@@ -220,5 +221,36 @@ export class AdminPanelController {
     @Body(new ZodValidationPipe(UpdatePlanSchema)) dto: UpdatePlanDto,
   ) {
     return this.adminService.updatePlan(id, dto);
+  }
+
+  // === VERIFICATION REQUESTS ===
+
+  @Get('verification-requests')
+  @ApiOperation({ summary: 'Listar solicitações de verificação' })
+  async getVerificationRequests(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.adminService.getVerificationRequests(
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 20,
+      status,
+    );
+  }
+
+  @Post('verification-requests/:id/approve')
+  @ApiOperation({ summary: 'Aprovar solicitação de verificação' })
+  async approveVerification(@Param('id') id: string) {
+    return this.adminService.approveVerification(id);
+  }
+
+  @Post('verification-requests/:id/reject')
+  @ApiOperation({ summary: 'Rejeitar solicitação de verificação' })
+  async rejectVerification(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(RejectVerificationSchema)) dto: RejectVerificationDto,
+  ) {
+    return this.adminService.rejectVerification(id, dto.reason);
   }
 }

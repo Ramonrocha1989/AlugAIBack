@@ -96,6 +96,7 @@ model User {
   proposalsSent           Proposal[]               @relation("ProposalSender")
   proposalsReceived       Proposal[]               @relation("ProposalReceiver")
   payments                Payment[]
+  verificationRequests    VerificationRequest[]
 
   @@index([plan])
   @@index([status])
@@ -357,6 +358,26 @@ model Payment {
   @@index([mercadoPagoId])
   @@index([status])
   @@map("payments")
+}
+
+model VerificationRequest {
+  id             String   @id @default(uuid())
+  userId         String
+  documentType   String
+  documentNumber String
+  companyName    String
+  phone          String
+  email          String
+  reason         String?  @db.Text
+  status         String   @default("PENDING")
+  rejectReason   String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("verification_requests")
 }
 
 model Plan {
