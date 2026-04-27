@@ -21,6 +21,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { VerificationModule } from './modules/verification/verification.module';
+import { ImagesModule } from './modules/images/images.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { PrismaService } from './common/prisma.service';
 
@@ -49,6 +50,7 @@ import { PrismaService } from './common/prisma.service';
     CategoriesModule,
     SettingsModule,
     VerificationModule,
+    ImagesModule,
   ],
   providers: [
     PrismaService,
