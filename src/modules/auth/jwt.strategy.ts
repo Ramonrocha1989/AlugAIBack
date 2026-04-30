@@ -9,12 +9,10 @@ import { ForbiddenException } from '@nestjs/common';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private prisma: PrismaService) {
     super({
-      // Ler token do cookie OU do header (fallback para compatibilidade)
+      // Ler token do header Authorization Bearer (accessToken em memória no frontend)
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => {
-          return request?.cookies?.token;
-        },
         ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (request: Request) => request?.cookies?.accessToken, // fallback cookie
       ]),
       secretOrKey: process.env.JWT_SECRET,
     });

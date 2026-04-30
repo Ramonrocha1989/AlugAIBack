@@ -41,7 +41,7 @@ export class AuthController {
     const { phone, company, ...userWithoutSensitive } = result.user;
     const { document, ...companyWithoutDocument } = company || {};
 
-    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    this.setAuthCookies(res, result.refreshToken);
 
     return {
       user: {
@@ -49,10 +49,7 @@ export class AuthController {
         company: company ? companyWithoutDocument : null,
       },
       message: result.message,
-      ...(process.env.NODE_ENV !== 'production' && {
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      }),
+      accessToken: result.accessToken,
     };
   }
 
@@ -73,17 +70,14 @@ export class AuthController {
       const { phone, company, ...userWithoutSensitive } = result.user;
       const { document, ...companyWithoutDocument } = company || {};
 
-      this.setAuthCookies(res, result.accessToken, result.refreshToken);
+      this.setAuthCookies(res, result.refreshToken);
 
       return {
         user: {
           ...userWithoutSensitive,
           company: company ? companyWithoutDocument : null,
         },
-        ...(process.env.NODE_ENV !== 'production' && {
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-        }),
+        accessToken: result.accessToken,
       };
     } catch (error) {
       if (error.status === 403 && error.message.includes('marcada para exclusão')) {
@@ -130,39 +124,29 @@ export class AuthController {
     const { phone, company, ...userWithoutSensitive } = result.user;
     const { document, ...companyWithoutDocument } = company || {};
 
-    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    this.setAuthCookies(res, result.refreshToken);
 
     return {
       user: {
         ...userWithoutSensitive,
         company: company ? companyWithoutDocument : null,
       },
+      accessToken: result.accessToken,
       ...(process.env.NODE_ENV !== 'production' && {
-        accessToken: result.accessToken,
         refreshToken: result.refreshToken,
       }),
     };
   }
 
-  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  private setAuthCookies(res: Response, refreshToken: string) {
     const isProd = process.env.NODE_ENV === 'production';
-    if (!isProd) return;
-    // Impedir que CDN/proxies cacheiem respostas com cookies
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none', // cross-domain requer none + secure
-      domain: '.baitabriq.com.br', // compartilhado entre baitabriq.com.br e api.baitabriq.com.br
-      maxAge: 15 * 60 * 1000,
-      path: '/',
-    });
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.baitabriq.com.br',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      ...(isProd && { domain: '.baitabriq.com.br' }),
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
     });
