@@ -35,6 +35,10 @@ export class LoggerService implements NestLoggerService {
     }
   }
 
+  private sanitizeLog(value: any): string {
+    return String(value ?? '').replace(/[\r\n\t]/g, ' ').substring(0, 500);
+  }
+
   private writeLog(level: string, message: string, context?: string, extra?: any) {
     const log = {
       timestamp: new Date().toISOString(),

@@ -25,7 +25,7 @@ export class SanitizePipe implements PipeTransform {
     }
 
     const sanitized = { ...obj };
-    for (const key in sanitized) {
+    for (const key of Object.keys(sanitized)) {
       if (typeof sanitized[key] === 'string') {
         sanitized[key] = sanitizeHtml(sanitized[key], {
           allowedTags: ['b', 'i', 'em', 'strong', 'br', 'p'],

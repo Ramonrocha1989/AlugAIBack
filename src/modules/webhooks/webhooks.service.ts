@@ -14,6 +14,10 @@ export class WebhooksService {
     });
   }
 
+  private safe(s: any): string {
+    return String(s ?? '').replace(/[\r\n\t]/g, ' ').substring(0, 200);
+  }
+
   validateSignature(xSignature: string, xRequestId: string, dataId: string) {
     const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
     if (!secret) {
@@ -50,7 +54,7 @@ export class WebhooksService {
   }
 
   async handleMercadoPagoWebhook(body: any) {
-    this.logger.log(`Webhook recebido: type=${body.type}, action=${body.action}`);
+    this.logger.log(`Webhook recebido: type=${this.safe(body.type)}, action=${this.safe(body.action)}`);
 
     if (body.type === 'payment') {
       await this.processPayment(body.data?.id);
@@ -69,7 +73,7 @@ export class WebhooksService {
       const paymentData = await payment.get({ id: paymentId });
       const status = paymentData.status || '';
 
-      this.logger.log(`Pagamento ${paymentId} com status: ${status}`);
+      this.logger.log(`Pagamento ${this.safe(paymentId)} com status: ${this.safe(status)}`);
 
       const existingPayment = await this.prisma.payment.findFirst({
         where: { mercadoPagoId: paymentId.toString() },
@@ -110,7 +114,7 @@ export class WebhooksService {
       const merchantOrder = new MerchantOrder(this.client);
       const orderData = await merchantOrder.get({ merchantOrderId: orderId });
 
-      this.logger.log(`Merchant order ${orderId}: status=${orderData.status}, payments=${JSON.stringify(orderData.payments?.map(p => ({ id: p.id, status: p.status })))}`);
+      this.logger.log(`Merchant order ${this.safe(orderId)}: status=${this.safe(orderData.status)}, payments=${JSON.stringify(orderData.payments?.map(p => ({ id: p.id, status: p.status })))}`);
 
       if (orderData.status !== 'closed') return;
 
@@ -158,13 +162,13 @@ export class WebhooksService {
             }),
           },
         });
-        this.logger.log(`🔄 Assinatura ${subscriptionId} ${action === 'created' ? 'ativada' : 'renovada'} — usuário ${userId} +30 dias`);
+      this.logger.log(`🔄 Assinatura ${this.safe(subscriptionId)} ${action === 'created' ? 'ativada' : 'renovada'} — usuário ${this.safe(userId)} +30 dias`);
         return;
       }
 
       // Cancelamento ou pausa
       if (['cancelled', 'paused'].includes(subscription.status)) {
-        this.logger.log(`Assinatura ${subscriptionId} ${subscription.status} — rebaixando usuário ${userId}`);
+        this.logger.log(`Assinatura ${this.safe(subscriptionId)} ${this.safe(subscription.status)} — rebaixando usuário ${this.safe(userId)}`);
         await this.onPlanCancelled(userId);
         await this.prisma.user.update({
           where: { id: userId },
@@ -178,7 +182,7 @@ export class WebhooksService {
 
   private async activatePlan(externalReference: string, paymentId: string) {
     if (!externalReference) {
-      this.logger.warn(`Pagamento ${paymentId} sem external_reference`);
+      this.logger.warn(`Pagamento ${this.safe(paymentId)} sem external_reference`);
       return;
     }
 

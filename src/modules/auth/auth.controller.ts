@@ -3,14 +3,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RegisterSchema, LoginSchema, RefreshTokenDto, RefreshTokenSchema, UpgradePlanDto, UpgradePlanSchema } from './dto/auth.dto';
+import { RegisterDto, LoginDto, RegisterSchema, LoginSchema, UpgradePlanDto, UpgradePlanSchema } from './dto/auth.dto';
 import { ForgotPasswordDto, ResetPasswordDto, ForgotPasswordSchema, ResetPasswordSchema } from './dto/password-reset.dto';
 import { VerifyEmailDto, VerifyEmailSchema } from './dto/verify-email.dto';
 import { UpdateProfileDto, UpdateProfileSchema } from './dto/update-profile.dto';
 import { RequestDeleteDto, ConfirmDeleteDto, RequestDeleteSchema, ConfirmDeleteSchema } from './dto/delete-account.dto';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
-import { Public, CurrentUser } from './decorators/auth.decorators';
+import { Public, CurrentUser, Roles } from './decorators/auth.decorators';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -33,20 +34,25 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email or document already exists' })
   async register(
     @Body(new ZodValidationPipe(RegisterSchema)) dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.register(dto);
-    
+
     const { phone, company, ...userWithoutSensitive } = result.user;
     const { document, ...companyWithoutDocument } = company || {};
-    
+
+    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+
     return {
       user: {
         ...userWithoutSensitive,
         company: company ? companyWithoutDocument : null,
       },
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
       message: result.message,
+      ...(process.env.NODE_ENV !== 'production' && {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      }),
     };
   }
 
@@ -59,28 +65,33 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body(new ZodValidationPipe(LoginSchema)) dto: LoginDto,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
     try {
       const result = await this.authService.login(dto);
-      
+
       const { phone, company, ...userWithoutSensitive } = result.user;
       const { document, ...companyWithoutDocument } = company || {};
-      
-      return res.json({
+
+      this.setAuthCookies(res, result.accessToken, result.refreshToken);
+
+      return {
         user: {
           ...userWithoutSensitive,
           company: company ? companyWithoutDocument : null,
         },
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      });
+        ...(process.env.NODE_ENV !== 'production' && {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+        }),
+      };
     } catch (error) {
       if (error.status === 403 && error.message.includes('marcada para exclusão')) {
-        return res.status(403).json({
+        res.status(403);
+        return {
           message: error.message,
           accountDeleted: true,
-        });
+        };
       }
       throw error;
     }
@@ -92,8 +103,11 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout(@CurrentUser() user: any, @Body() body: { refreshToken?: string }) {
-    await this.authService.logout(user.userId, body.refreshToken);
+  async logout(@CurrentUser() user: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refreshToken;
+    await this.authService.logout(user.userId, refreshToken);
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
     return { message: 'Logout realizado com sucesso' };
   }
 
@@ -103,19 +117,52 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@Body(new ZodValidationPipe(RefreshTokenSchema)) body: RefreshTokenDto) {
-    const result = await this.authService.refreshAccessToken(body.refreshToken);
-    
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() body?: { refreshToken?: string }) {
+    const refreshToken = req.cookies?.refreshToken || body?.refreshToken;
+
+    if (!refreshToken) {
+      res.status(HttpStatus.UNAUTHORIZED);
+      return { message: 'Refresh token ausente' };
+    }
+
+    const result = await this.authService.refreshAccessToken(refreshToken);
+
     const { phone, company, ...userWithoutSensitive } = result.user;
     const { document, ...companyWithoutDocument } = company || {};
-    
+
+    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+
     return {
-      accessToken: result.accessToken,
       user: {
         ...userWithoutSensitive,
         company: company ? companyWithoutDocument : null,
       },
+      ...(process.env.NODE_ENV !== 'production' && {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      }),
     };
+  }
+
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+    const isProd = process.env.NODE_ENV === 'production';
+    if (!isProd) return;
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none', // cross-domain requer none + secure
+      domain: '.baitabriq.com.br', // compartilhado entre baitabriq.com.br e api.baitabriq.com.br
+      maxAge: 15 * 60 * 1000,
+      path: '/',
+    });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      domain: '.baitabriq.com.br',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
   }
 
   @Public()
@@ -156,13 +203,15 @@ export class AuthController {
     return this.authService.getMe(user.userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Post('upgrade-plan')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Upgrade user plan' })
+  @ApiOperation({ summary: 'Upgrade user plan (Admin only)' })
   @ApiResponse({ status: 200, description: 'Plan upgraded successfully' })
+  @ApiResponse({ status: 403, description: 'Admin only' })
   async upgradePlan(@CurrentUser() user: any, @Body(new ZodValidationPipe(UpgradePlanSchema)) body: UpgradePlanDto) {
-    return this.authService.upgradePlan(user.userId, body.plan);
+    return this.authService.upgradePlan(body.userId ?? user.userId, body.plan);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -12,9 +12,8 @@ import { HttpLoggerInterceptor } from './common/http-logger.interceptor';
 import { validateEnv } from './config/env.validation';
 
 async function bootstrap() {
-  // Validate environment variables first
   validateEnv();
-  // Inicializar Sentry
+
   if (process.env.SENTRY_DSN) {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
@@ -28,20 +27,10 @@ async function bootstrap() {
     logger: new LoggerService(),
   });
 
-  // Enable graceful shutdown
-  app.enableShutdownHooks();
-
-  // Global Interceptors
-  app.useGlobalInterceptors(new HttpLoggerInterceptor());
-  
-  if (process.env.SENTRY_DSN) {
-    app.useGlobalInterceptors(new SentryInterceptor());
-  }
-
-  // Cookie Parser
+  // Cookie Parser — deve vir antes de tudo
   app.use(cookieParser());
 
-  // CORS PRIMEIRO (antes de tudo)
+  // CORS — deve vir antes do helmet
   const allowedOrigins = [
     'https://baitabriq.com.br',
     'https://www.baitabriq.com.br',
@@ -56,39 +45,46 @@ async function bootstrap() {
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   });
 
-  // Security Headers
+  app.enableShutdownHooks();
+
+  app.useGlobalInterceptors(new HttpLoggerInterceptor());
+
+  if (process.env.SENTRY_DSN) {
+    app.useGlobalInterceptors(new SentryInterceptor());
+  }
+
+  const isProd = process.env.NODE_ENV === 'production';
+
   app.use(helmet({
-    contentSecurityPolicy: {
+    contentSecurityPolicy: isProd ? {
       directives: {
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", 'data:', 'https:'],
       },
-    },
+    } : false,
     crossOriginEmbedderPolicy: false,
-    hsts: {
+    hsts: isProd ? {
       maxAge: 31536000,
       includeSubDomains: true,
       preload: true,
-    },
+    } : false,
   }));
 
-  // Global Validation Pipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,
   }));
 
-  // Global prefix
   app.setGlobalPrefix('api');
 
-  // Swagger configuration (disabled in production)
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProd) {
     const config = new DocumentBuilder()
       .setTitle('Equipment Rental Marketplace API')
       .setDescription('B2B Equipment Rental Marketplace - MVP')
@@ -113,19 +109,17 @@ async function bootstrap() {
   console.log(`🔒 Security: Cookies + CSRF + Rate Limiting enabled`);
   console.log(`🏥 Health check: http://localhost:${port}/api/health`);
   console.log(`📊 Metrics: http://localhost:${port}/api/metrics`);
-  
+
   if (process.env.SENTRY_DSN) {
     console.log(`🔍 Sentry: Error tracking enabled`);
   }
-  
+
   if (process.env.BETTERSTACK_TOKEN) {
     console.log(`📝 BetterStack: Logs enabled`);
   }
 
-  // Graceful shutdown handlers
   const gracefulShutdown = async (signal: string) => {
     console.log(`\n🛑 ${signal} received, shutting down gracefully...`);
-    
     try {
       await app.close();
       console.log('✅ Application closed successfully');

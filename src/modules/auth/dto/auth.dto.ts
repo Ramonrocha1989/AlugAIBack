@@ -56,6 +56,7 @@ export type RefreshTokenDto = z.infer<typeof RefreshTokenSchema>;
 
 export const UpgradePlanSchema = z.object({
   plan: z.enum(['free', 'lojista'], { required_error: 'Plano obrigatório' }),
+  userId: z.string().uuid('userId inválido').optional(),
 });
 
 export type UpgradePlanDto = z.infer<typeof UpgradePlanSchema>;

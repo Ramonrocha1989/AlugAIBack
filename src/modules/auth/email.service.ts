@@ -14,6 +14,14 @@ export class EmailService {
     this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   private footer(email: string) {
     const year = new Date().getFullYear();
     return {
@@ -114,6 +122,8 @@ ${footerHtml}
   async sendDeleteConfirmationEmail(email: string, userName: string, token: string) {
     const confirmLink = `${process.env.FRONTEND_URL}/confirm-delete?token=${token}`;
     const { text: footerText } = this.footer(email);
+    const safeName = this.escapeHtml(userName);
+    const safeEmail = this.escapeHtml(email);
 
     try {
       await this.resend.emails.send({
@@ -126,7 +136,7 @@ ${footerHtml}
         html: this.wrap(`
     ${this.header('#dc2626')}
     <div style="padding:30px 20px;">
-      <h2 style="color:#333;">Olá ${userName},</h2>
+      <h2 style="color:#333;">Olá ${safeName},</h2>
       <p style="color:#555;line-height:1.6;">Recebemos uma solicitação para excluir sua conta no BaitaBriq.</p>
       <p style="color:#dc2626;font-weight:bold;">⚠️ ATENÇÃO: Esta ação é irreversível!</p>
       <h3 style="color:#333;">O que será excluído:</h3>
@@ -141,7 +151,7 @@ ${footerHtml}
       <p style="color:#888;font-size:13px;">Este link expira em 24 horas.</p>
       <p style="color:#888;font-size:13px;">Se você não solicitou esta exclusão, ignore este email e sua conta permanecerá ativa.</p>
       <p style="color:#888;font-size:13px;">Após a confirmação, você terá 30 dias para recuperar sua conta entrando em contato com o suporte.</p>
-    </div>`, email),
+    </div>`, safeEmail),
       });
     } catch (err) {
       console.error('Erro ao enviar email de confirmação de exclusão:', err);
@@ -151,6 +161,8 @@ ${footerHtml}
   async sendDeletedAccountEmail(email: string, userName: string, deletionDate: Date) {
     const { text: footerText } = this.footer(email);
     const formattedDate = deletionDate.toLocaleDateString('pt-BR');
+    const safeName = this.escapeHtml(userName);
+    const safeEmail = this.escapeHtml(email);
 
     try {
       await this.resend.emails.send({
@@ -163,7 +175,7 @@ ${footerHtml}
         html: this.wrap(`
     ${this.header('#f59e0b')}
     <div style="padding:30px 20px;">
-      <h2 style="color:#333;">Olá ${userName},</h2>
+      <h2 style="color:#333;">Olá ${safeName},</h2>
       <p style="color:#555;line-height:1.6;">Sua conta foi marcada para exclusão e será removida permanentemente em 30 dias.</p>
       <p style="color:#555;line-height:1.6;"><strong>Data de exclusão definitiva:</strong> ${formattedDate}</p>
       <p style="color:#555;line-height:1.6;">Para recuperar sua conta antes desta data, entre em contato:</p>
@@ -173,7 +185,7 @@ ${footerHtml}
       <p style="color:#555;line-height:1.6;">Sentiremos sua falta!</p>
       <br>
       <p style="color:#555;">Equipe BaitaBriq</p>
-    </div>`, email),
+    </div>`, safeEmail),
       });
     } catch (err) {
       console.error('Erro ao enviar email de conta excluída:', err);
