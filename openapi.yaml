@@ -1,19 +1,33 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: Equipment Rental Marketplace API
+  title: BaitaBriq API
   version: 1.0.0
-  description: API B2B para marketplace de aluguel de equipamentos entre empresas
+  description: API B2B para compra, venda e propostas de maquinas entre empresas.
 
 servers:
   - url: http://localhost:3000/api
     description: Desenvolvimento
 
 tags:
-  - name: Auth
-  - name: Companies
-  - name: Equipments
-  - name: Rentals
-  - name: Admin
+  - name: auth
+  - name: users
+  - name: companies
+  - name: machines
+  - name: proposals
+  - name: favorites
+  - name: reviews
+  - name: notifications
+  - name: plans
+  - name: subscriptions
+  - name: verification
+  - name: analytics
+  - name: categories
+  - name: settings
+  - name: admin
+  - name: health
+  - name: metrics
+  - name: webhooks
+  - name: images
 
 components:
   securitySchemes:
@@ -23,230 +37,614 @@ components:
       bearerFormat: JWT
 
   schemas:
-    User:
-      type: object
-      properties:
-        id:
-          type: string
-        email:
-          type: string
-        name:
-          type: string
-        role:
-          type: string
-          enum: [ADMIN, COMPANY]
-        companyId:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-
-    Company:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        cnpj:
-          type: string
-        phone:
-          type: string
-        address:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-
-    Equipment:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        category:
-          type: string
-        pricePerDay:
-          type: number
-        available:
-          type: boolean
-        companyId:
-          type: string
-        company:
-          $ref: '#/components/schemas/Company'
-        images:
-          type: array
-          items:
-            type: string
-        createdAt:
-          type: string
-          format: date-time
-
-    Rental:
-      type: object
-      properties:
-        id:
-          type: string
-        equipmentId:
-          type: string
-        equipment:
-          $ref: '#/components/schemas/Equipment'
-        renterCompanyId:
-          type: string
-        renterCompany:
-          $ref: '#/components/schemas/Company'
-        startDate:
-          type: string
-          format: date-time
-        endDate:
-          type: string
-          format: date-time
-        totalPrice:
-          type: number
-        status:
-          type: string
-          enum: [PENDING, APPROVED, REJECTED, COMPLETED]
-        createdAt:
-          type: string
-          format: date-time
-
-    RegisterDto:
-      type: object
-      required:
-        - email
-        - password
-        - name
-        - companyName
-        - cnpj
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          minLength: 6
-        name:
-          type: string
-        companyName:
-          type: string
-        cnpj:
-          type: string
-        phone:
-          type: string
-        address:
-          type: string
-
-    LoginDto:
-      type: object
-      required:
-        - email
-        - password
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-
-    AuthResponse:
-      type: object
-      properties:
-        access_token:
-          type: string
-        user:
-          $ref: '#/components/schemas/User'
-
-    CreateEquipmentDto:
-      type: object
-      required:
-        - name
-        - description
-        - category
-        - pricePerDay
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        category:
-          type: string
-        pricePerDay:
-          type: number
-          minimum: 0
-        images:
-          type: array
-          items:
-            type: string
-
-    UpdateEquipmentDto:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        category:
-          type: string
-        pricePerDay:
-          type: number
-          minimum: 0
-        available:
-          type: boolean
-        images:
-          type: array
-          items:
-            type: string
-
-    CreateRentalDto:
-      type: object
-      required:
-        - equipmentId
-        - startDate
-        - endDate
-      properties:
-        equipmentId:
-          type: string
-        startDate:
-          type: string
-          format: date-time
-        endDate:
-          type: string
-          format: date-time
-
     Error:
       type: object
       properties:
         statusCode:
           type: integer
         message:
-          type: string
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
         error:
           type: string
 
+    GenericMessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    RegisterDto:
+      type: object
+      required: [email, password, userType, phone]
+      example:
+        email: contato@empresa.com
+        password: SenhaForte123
+        userType: COMPANY
+        companyName: Agro Rocha Ltda
+        responsibleName: Ramon Rocha
+        cnpj: "12345678000195"
+        phone: "51999887766"
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          description: Deve conter maiuscula, minuscula e numero.
+        userType:
+          type: string
+          enum: [INDIVIDUAL, COMPANY]
+        fullName:
+          type: string
+        cpf:
+          type: string
+        companyName:
+          type: string
+        cnpj:
+          type: string
+        responsibleName:
+          type: string
+        phone:
+          type: string
+          pattern: "^\\d{10,11}$"
+
+    LoginDto:
+      type: object
+      required: [email, password]
+      example:
+        email: contato@empresa.com
+        password: SenhaForte123
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshTokenDto:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    UpgradePlanDto:
+      type: object
+      required: [plan]
+      properties:
+        plan:
+          type: string
+          enum: [free, lojista]
+        userId:
+          type: string
+          format: uuid
+
+    ForgotPasswordDto:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordDto:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 8
+
+    VerifyEmailDto:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    UpdateAuthProfileDto:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+          pattern: "^\\d{10,11}$"
+
+    RequestDeleteDto:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
+    ConfirmDeleteDto:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    CreateMachineDto:
+      type: object
+      required:
+        - businessType
+        - name
+        - description
+        - category
+        - manufacturer
+        - model
+        - yearModel
+        - price
+        - state
+        - city
+        - images
+      example:
+        businessType: SALE
+        name: Trator John Deere 6110J 2022
+        description: Trator em excelente estado, revisoes em dia, pneus novos e pronto para trabalho pesado no campo.
+        category: tratores
+        manufacturer: John Deere
+        model: 6110J
+        yearModel: 2022
+        power: 110
+        engineHours: 2300
+        price: 420000
+        acceptsTradeDown: false
+        acceptsTradeUp: true
+        acceptsGrains: false
+        acceptsFinancing: true
+        state: RS
+        city: Porto Alegre
+        images:
+          - https://res.cloudinary.com/demo/image/upload/trator-frente.jpg
+          - https://res.cloudinary.com/demo/image/upload/trator-lateral.jpg
+        quickTags:
+          - NEW_TIRES
+          - COMPLETE_DOCS
+      properties:
+        businessType:
+          type: string
+          enum: [SALE, RENTAL, EXCHANGE, SERVICE]
+        name:
+          type: string
+          minLength: 5
+          maxLength: 200
+        description:
+          type: string
+          minLength: 50
+          maxLength: 5000
+        category:
+          type: string
+        manufacturer:
+          type: string
+        model:
+          type: string
+        yearModel:
+          type: integer
+          minimum: 1980
+        power:
+          type: number
+          minimum: 0
+        engineHours:
+          type: integer
+          minimum: 0
+        serialNumber:
+          type: string
+        price:
+          type: number
+          minimum: 0.01
+        acceptsTradeDown:
+          type: boolean
+        acceptsTradeUp:
+          type: boolean
+        acceptsGrains:
+          type: boolean
+        acceptsFinancing:
+          type: boolean
+        state:
+          type: string
+          minLength: 2
+          maxLength: 2
+        city:
+          type: string
+        zipCode:
+          type: string
+          pattern: "^\\d{8}$"
+        images:
+          type: array
+          minItems: 1
+          maxItems: 15
+          items:
+            type: string
+            format: uri
+        videoUrl:
+          type: string
+          format: uri
+        quickTags:
+          type: array
+          items:
+            type: string
+            enum:
+              - NEW_TIRES
+              - ORIGINAL_CABIN
+              - AUTHORIZED_SERVICE
+              - GPS_INTEGRATED
+              - AIR_CONDITIONING
+              - SINGLE_OWNER
+              - COMPLETE_DOCS
+        ownerPhone:
+          type: string
+          pattern: "^\\d{10,11}$"
+
+    UpdateMachineDto:
+      allOf:
+        - $ref: '#/components/schemas/CreateMachineDto'
+        - type: object
+          properties:
+            isPremium:
+              type: boolean
+            isFeatured:
+              type: boolean
+            available:
+              type: boolean
+            status:
+              type: string
+              enum: [ACTIVE, SOLD, INACTIVE]
+
+    CreateProposalDto:
+      type: object
+      required: [machineId, proposedPrice, message]
+      example:
+        machineId: 9f1c8c8f-9b63-4b11-8e9f-0fcd662ca01a
+        proposedPrice: 395000
+        message: Tenho interesse imediato e posso fechar ainda esta semana.
+      properties:
+        machineId:
+          type: string
+          format: uuid
+        proposedPrice:
+          type: number
+          minimum: 0.01
+        message:
+          type: string
+          minLength: 10
+          maxLength: 1000
+
+    CounterProposalDto:
+      type: object
+      required: [counterPrice, counterMessage]
+      example:
+        counterPrice: 405000
+        counterMessage: Consigo reduzir para este valor com pagamento a vista.
+      properties:
+        counterPrice:
+          type: number
+          minimum: 0.01
+        counterMessage:
+          type: string
+          minLength: 10
+          maxLength: 1000
+
+    AddFavoriteDto:
+      type: object
+      required: [machineId]
+      properties:
+        machineId:
+          type: string
+          format: uuid
+
+    CreateReviewDto:
+      type: object
+      required: [reviewedUserId, rating]
+      properties:
+        reviewedUserId:
+          type: string
+          format: uuid
+        machineId:
+          type: string
+          format: uuid
+          nullable: true
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+
+    UpdateReviewDto:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+
+    UpdateUserProfileDto:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+          pattern: "^\\d{10,11}$"
+
+    UpdateCompanyProfileDto:
+      type: object
+      properties:
+        description:
+          type: string
+        phone:
+          type: string
+        location:
+          type: string
+        website:
+          type: string
+        logo:
+          type: string
+        banner:
+          type: string
+        businessHours:
+          type: string
+        categoriesWorked:
+          type: array
+          items:
+            type: string
+        gallery:
+          type: array
+          items:
+            type: string
+
+    RequestVerificationDto:
+      type: object
+      required: [documentType, documentNumber, companyName, phone, email]
+      properties:
+        documentType:
+          type: string
+          enum: [CPF, CNPJ]
+        documentNumber:
+          type: string
+        companyName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        reason:
+          type: string
+
+    RejectVerificationDto:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    BanUserDto:
+      type: object
+      required: [isBanned]
+      properties:
+        isBanned:
+          type: boolean
+
+    VerifySellerDto:
+      type: object
+      required: [isVerifiedSeller]
+      properties:
+        isVerifiedSeller:
+          type: boolean
+
+    UpdateMachineStatusDto:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, PENDING, REJECTED]
+
+    FeatureMachineDto:
+      type: object
+      required: [isFeatured]
+      properties:
+        isFeatured:
+          type: boolean
+
+    UpdateSettingsDto:
+      type: object
+      properties:
+        siteName:
+          type: string
+        homeTitle:
+          type: string
+        homeDescription:
+          type: string
+        maintenanceMode:
+          type: boolean
+        maintenanceMessage:
+          type: string
+        whatsappSupport:
+          type: string
+        phoneSupport:
+          type: string
+        emailSupport:
+          type: string
+        socialLinks:
+          type: object
+          properties:
+            instagram:
+              type: string
+            facebook:
+              type: string
+            youtube:
+              type: string
+            linkedin:
+              type: string
+        termsOfUse:
+          type: string
+        privacyPolicy:
+          type: string
+
+    CreateBannerDto:
+      type: object
+      required: [imageUrl]
+      properties:
+        imageUrl:
+          type: string
+          format: uri
+        link:
+          type: string
+        active:
+          type: boolean
+
+    UpdateUserPlanDto:
+      type: object
+      required: [plan]
+      properties:
+        plan:
+          type: string
+          enum: [free, basico, profissional, premium]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateCategoryDto:
+      type: object
+      required: [name, slug]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        icon:
+          type: string
+        isActive:
+          type: boolean
+
+    UpdateCategoryDto:
+      allOf:
+        - $ref: '#/components/schemas/CreateCategoryDto'
+
+    ReorderCategoryDto:
+      type: object
+      required: [order]
+      properties:
+        order:
+          type: integer
+          minimum: 0
+
+    UpdatePlanDto:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        maxAds:
+          type: integer
+          minimum: 0
+        maxPhotos:
+          type: integer
+          minimum: 0
+        maxVideos:
+          type: integer
+          minimum: 0
+        adDuration:
+          type: integer
+          minimum: 0
+        maxPremiumAds:
+          type: integer
+          minimum: 0
+        maxFeaturedAds:
+          type: integer
+          minimum: 0
+        hasAnalytics:
+          type: boolean
+        analyticsLevel:
+          type: string
+        hasPriority:
+          type: boolean
+        hasStorePage:
+          type: boolean
+        hasVerifiedBadge:
+          type: boolean
+        supportLevel:
+          type: string
+        isActive:
+          type: boolean
+
 paths:
+  /auth/health:
+    get:
+      tags: [auth]
+      summary: Health check do modulo auth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
   /auth/register:
     post:
-      tags:
-        - Auth
-      summary: Cadastro de empresa e usuário
+      tags: [auth]
+      summary: Registrar empresa e usuario
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/RegisterDto'
+            examples:
+              empresa:
+                value:
+                  email: contato@empresa.com
+                  password: SenhaForte123
+                  userType: COMPANY
+                  companyName: Agro Rocha Ltda
+                  responsibleName: Ramon Rocha
+                  cnpj: "12345678000195"
+                  phone: "51999887766"
       responses:
         '201':
-          description: Cadastro realizado com sucesso
+          description: Criado
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                sucesso:
+                  value:
+                    message: Cadastro realizado com sucesso
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    user:
+                      id: 7d902d9f-8c4d-4f7e-9065-693ab35fcfad
+                      email: contato@empresa.com
+                      role: COMPANY
         '400':
-          description: Dados inválidos
+          description: Erro de validacao
           content:
             application/json:
               schema:
@@ -254,8 +652,7 @@ paths:
 
   /auth/login:
     post:
-      tags:
-        - Auth
+      tags: [auth]
       summary: Login
       requestBody:
         required: true
@@ -263,79 +660,241 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginDto'
+            examples:
+              padrao:
+                value:
+                  email: contato@empresa.com
+                  password: SenhaForte123
       responses:
         '200':
-          description: Login realizado com sucesso
+          description: OK
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Credenciais inválidas
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              examples:
+                sucesso:
+                  value:
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    user:
+                      id: 7d902d9f-8c4d-4f7e-9065-693ab35fcfad
+                      email: contato@empresa.com
+                      role: COMPANY
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Renovar token
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenDto'
+            examples:
+              body:
+                value:
+                  refreshToken: sample-refresh-token
+      responses:
+        '200':
+          description: OK
+
+  /auth/forgot-password:
+    post:
+      tags: [auth]
+      summary: Solicitar reset de senha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordDto'
+            examples:
+              body:
+                value:
+                  email: contato@empresa.com
+      responses:
+        '200':
+          description: OK
+
+  /auth/reset-password:
+    post:
+      tags: [auth]
+      summary: Resetar senha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordDto'
+            examples:
+              body:
+                value:
+                  token: reset-token-exemplo
+                  password: NovaSenha123
+      responses:
+        '200':
+          description: OK
+
+  /auth/verify-email:
+    post:
+      tags: [auth]
+      summary: Verificar email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailDto'
+            examples:
+              body:
+                value:
+                  token: verify-token-exemplo
+      responses:
+        '200':
+          description: OK
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /auth/upgrade-plan:
+    post:
+      tags: [auth]
+      summary: Upgrade de plano (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpgradePlanDto'
+            examples:
+              body:
+                value:
+                  plan: lojista
+                  userId: 7d902d9f-8c4d-4f7e-9065-693ab35fcfad
+      responses:
+        '200':
+          description: OK
+
+  /auth/profile:
+    put:
+      tags: [auth]
+      summary: Atualizar perfil do usuario
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAuthProfileDto'
+            examples:
+              body:
+                value:
+                  name: Ramon Rocha
+                  phone: "51999887766"
+      responses:
+        '200':
+          description: OK
+
+  /auth/request-delete:
+    post:
+      tags: [auth]
+      summary: Solicitar exclusao da conta
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestDeleteDto'
+            examples:
+              body:
+                value:
+                  password: SenhaForte123
+      responses:
+        '200':
+          description: OK
+
+  /auth/confirm-delete:
+    post:
+      tags: [auth]
+      summary: Confirmar exclusao da conta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmDeleteDto'
+            examples:
+              body:
+                value:
+                  token: delete-token-exemplo
+      responses:
+        '200':
+          description: OK
+
+  /users/me:
+    get:
+      tags: [users]
+      summary: Obter meu perfil
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+    put:
+      tags: [users]
+      summary: Atualizar meu perfil
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserProfileDto'
+            examples:
+              body:
+                value:
+                  name: Ramon Rocha
+                  phone: "51999887766"
+      responses:
+        '200':
+          description: OK
 
   /companies/me:
     get:
-      tags:
-        - Companies
-      summary: Dados da minha empresa
+      tags: [companies]
+      summary: Perfil da minha empresa
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Dados da empresa
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Company'
-        '401':
-          description: Não autenticado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: OK
 
-  /equipments:
-    get:
-      tags:
-        - Equipments
-      summary: Listar equipamentos
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: category
-          in: query
-          schema:
-            type: string
-        - name: available
-          in: query
-          schema:
-            type: boolean
-        - name: minPrice
-          in: query
-          schema:
-            type: number
-        - name: maxPrice
-          in: query
-          schema:
-            type: number
-      responses:
-        '200':
-          description: Lista de equipamentos
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Equipment'
-
-    post:
-      tags:
-        - Equipments
-      summary: Criar equipamento
+  /companies/profile:
+    put:
+      tags: [companies]
+      summary: Atualizar perfil da empresa
       security:
         - bearerAuth: []
       requestBody:
@@ -343,57 +902,134 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEquipmentDto'
+              $ref: '#/components/schemas/UpdateCompanyProfileDto'
+            examples:
+              body:
+                value:
+                  description: Especialistas em tratores e colheitadeiras.
+                  phone: "51999887766"
+                  location: Porto Alegre - RS
+                  website: https://agro-rocha.com.br
+                  businessHours: Seg-Sex 08:00-18:00
+      responses:
+        '200':
+          description: OK
+
+  /companies/{id}:
+    get:
+      tags: [companies]
+      summary: Perfil publico da empresa
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /companies/{id}/machines:
+    get:
+      tags: [companies]
+      summary: Maquinas da empresa
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /machines:
+    get:
+      tags: [machines]
+      summary: Listar maquinas
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [machines]
+      summary: Criar maquina
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMachineDto'
+            examples:
+              trator:
+                value:
+                  businessType: SALE
+                  name: Trator John Deere 6110J 2022
+                  description: Trator em excelente estado, revisoes em dia, pneus novos e pronto para trabalho pesado no campo.
+                  category: tratores
+                  manufacturer: John Deere
+                  model: 6110J
+                  yearModel: 2022
+                  power: 110
+                  engineHours: 2300
+                  price: 420000
+                  acceptsTradeDown: false
+                  acceptsTradeUp: true
+                  acceptsGrains: false
+                  acceptsFinancing: true
+                  state: RS
+                  city: Porto Alegre
+                  images:
+                    - https://res.cloudinary.com/demo/image/upload/trator-frente.jpg
+                    - https://res.cloudinary.com/demo/image/upload/trator-lateral.jpg
+                  quickTags:
+                    - NEW_TIRES
+                    - COMPLETE_DOCS
       responses:
         '201':
-          description: Equipamento criado
+          description: Criado
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Equipment'
-        '400':
-          description: Dados inválidos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              examples:
+                criado:
+                  value:
+                    id: 0a7ef269-a8b1-4526-9802-2d7f8e5d4a57
+                    name: Trator John Deere 6110J 2022
+                    status: ACTIVE
+                    createdAt: "2026-04-30T18:30:00.000Z"
 
-  /equipments/{id}:
+  /machines/my:
     get:
-      tags:
-        - Equipments
-      summary: Detalhes do equipamento
+      tags: [machines]
+      summary: Listar minhas maquinas
       security:
         - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /machines/{id}:
+    get:
+      tags: [machines]
+      summary: Buscar maquina por ID
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Detalhes do equipamento
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Equipment'
-        '404':
-          description: Equipamento não encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
+          description: OK
     put:
-      tags:
-        - Equipments
-      summary: Atualizar equipamento
+      tags: [machines]
+      summary: Atualizar maquina
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
           required: true
           schema:
             type: string
@@ -402,60 +1038,226 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateEquipmentDto'
+              $ref: '#/components/schemas/UpdateMachineDto'
+            examples:
+              body:
+                value:
+                  price: 410000
+                  description: Maquina revisada, pronta para entrega imediata.
+                  status: ACTIVE
       responses:
         '200':
-          description: Equipamento atualizado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Equipment'
-        '403':
-          description: Sem permissão
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Equipamento não encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
+          description: OK
     delete:
-      tags:
-        - Equipments
-      summary: Deletar equipamento
+      tags: [machines]
+      summary: Deletar maquina
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /machines/{id}/view:
+    post:
+      tags: [machines]
+      summary: Registrar visualizacao
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /machines/{id}/track-whatsapp:
+    post:
+      tags: [machines]
+      summary: Registrar clique WhatsApp
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /machines/{id}/mark-lead:
+    post:
+      tags: [machines]
+      summary: Marcar lead qualificado
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /proposals:
+    get:
+      tags: [proposals]
+      summary: Listar propostas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [proposals]
+      summary: Criar proposta
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProposalDto'
+            examples:
+              proposta:
+                value:
+                  machineId: 9f1c8c8f-9b63-4b11-8e9f-0fcd662ca01a
+                  proposedPrice: 395000
+                  message: Tenho interesse imediato e posso fechar ainda esta semana.
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              examples:
+                criada:
+                  value:
+                    id: 64cd36e2-90db-4618-b6b9-14395aef95e5
+                    status: PENDING
+                    proposedPrice: 395000
+
+  /proposals/{id}/accept:
+    patch:
+      tags: [proposals]
+      summary: Aceitar proposta
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /proposals/{id}/reject:
+    patch:
+      tags: [proposals]
+      summary: Rejeitar proposta
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /proposals/{id}/counter:
+    patch:
+      tags: [proposals]
+      summary: Fazer contra-proposta
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CounterProposalDto'
+            examples:
+              contraproposta:
+                value:
+                  counterPrice: 405000
+                  counterMessage: Consigo reduzir para este valor com pagamento a vista.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              examples:
+                atualizada:
+                  value:
+                    id: 64cd36e2-90db-4618-b6b9-14395aef95e5
+                    status: COUNTERED
+                    counterPrice: 405000
+
+  /proposals/{id}/view:
+    patch:
+      tags: [proposals]
+      summary: Marcar proposta como vista
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /proposals/{id}:
+    delete:
+      tags: [proposals]
+      summary: Cancelar proposta
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
           required: true
           schema:
             type: string
       responses:
         '204':
-          description: Equipamento deletado
-        '403':
-          description: Sem permissão
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Equipamento não encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: Sem conteudo
 
-  /rentals:
+  /favorites:
+    get:
+      tags: [favorites]
+      summary: Listar favoritos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
     post:
-      tags:
-        - Rentals
-      summary: Solicitar aluguel
+      tags: [favorites]
+      summary: Adicionar favorito
       security:
         - bearerAuth: []
       requestBody:
@@ -463,152 +1265,873 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRentalDto'
+              $ref: '#/components/schemas/AddFavoriteDto'
+            examples:
+              body:
+                value:
+                  machineId: 9f1c8c8f-9b63-4b11-8e9f-0fcd662ca01a
       responses:
         '201':
-          description: Aluguel solicitado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rental'
-        '400':
-          description: Dados inválidos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: Criado
 
-  /rentals/my:
+  /favorites/check/{machineId}:
     get:
-      tags:
-        - Rentals
-      summary: Meus aluguéis
+      tags: [favorites]
+      summary: Verificar favorito
       security:
         - bearerAuth: []
       parameters:
-        - name: type
-          in: query
-          schema:
-            type: string
-            enum: [owner, renter]
-      responses:
-        '200':
-          description: Lista de aluguéis
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Rental'
-
-  /rentals/{id}/approve:
-    put:
-      tags:
-        - Rentals
-      summary: Aprovar aluguel
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
+        - in: path
+          name: machineId
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Aluguel aprovado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rental'
-        '403':
-          description: Sem permissão
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Aluguel não encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: OK
 
-  /rentals/{id}/reject:
-    put:
-      tags:
-        - Rentals
-      summary: Rejeitar aluguel
+  /favorites/{machineId}:
+    delete:
+      tags: [favorites]
+      summary: Remover favorito
       security:
         - bearerAuth: []
       parameters:
-        - name: id
-          in: path
+        - in: path
+          name: machineId
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Aluguel rejeitado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Rental'
-        '403':
-          description: Sem permissão
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Aluguel não encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: OK
+
+  /reviews:
+    post:
+      tags: [reviews]
+      summary: Criar avaliacao
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewDto'
+            examples:
+              body:
+                value:
+                  reviewedUserId: 1142a9d8-c71e-4333-b2c3-2ee6d1f6d0bb
+                  machineId: 9f1c8c8f-9b63-4b11-8e9f-0fcd662ca01a
+                  rating: 5
+                  comment: Excelente atendimento e negociacao.
+      responses:
+        '201':
+          description: Criado
+
+  /reviews/user/{userId}:
+    get:
+      tags: [reviews]
+      summary: Avaliacoes por usuario
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /reviews/user/{userId}/rating:
+    get:
+      tags: [reviews]
+      summary: Rating agregado do usuario
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /reviews/machine/{machineId}:
+    get:
+      tags: [reviews]
+      summary: Avaliacoes por maquina
+      parameters:
+        - in: path
+          name: machineId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /reviews/{id}:
+    put:
+      tags: [reviews]
+      summary: Editar avaliacao
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReviewDto'
+            examples:
+              body:
+                value:
+                  rating: 4
+                  comment: Ajustando nota apos suporte pos-venda.
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags: [reviews]
+      summary: Deletar avaliacao
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sem conteudo
+
+  /notifications:
+    get:
+      tags: [notifications]
+      summary: Listar notificacoes
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: read
+          schema:
+            type: boolean
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: offset
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+
+  /notifications/unread-count:
+    get:
+      tags: [notifications]
+      summary: Total de notificacoes nao lidas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /notifications/{id}/read:
+    put:
+      tags: [notifications]
+      summary: Marcar notificacao como lida
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /notifications/read-all:
+    put:
+      tags: [notifications]
+      summary: Marcar todas como lidas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /notifications/{id}:
+    delete:
+      tags: [notifications]
+      summary: Deletar notificacao
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sem conteudo
+
+  /plans:
+    get:
+      tags: [plans]
+      summary: Listar planos
+      responses:
+        '200':
+          description: OK
+
+  /subscriptions/cancel:
+    post:
+      tags: [subscriptions]
+      summary: Cancelar assinatura ativa
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /verification/request:
+    post:
+      tags: [verification]
+      summary: Solicitar verificacao de vendedor
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestVerificationDto'
+            examples:
+              body:
+                value:
+                  documentType: CNPJ
+                  documentNumber: "12345678000195"
+                  companyName: Agro Rocha Ltda
+                  phone: "51999887766"
+                  email: contato@empresa.com
+                  reason: Empresa com operacao ativa no agro ha mais de 5 anos.
+      responses:
+        '200':
+          description: OK
+
+  /analytics/summary:
+    get:
+      tags: [analytics]
+      summary: Resumo de analytics do usuario logado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /analytics/category-benchmarks:
+    get:
+      tags: [analytics]
+      summary: Benchmarks por categoria
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: category
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /categories:
+    get:
+      tags: [categories]
+      summary: Listar categorias ativas
+      responses:
+        '200':
+          description: OK
+
+  /settings/public:
+    get:
+      tags: [settings]
+      summary: Configuracoes publicas do site
+      responses:
+        '200':
+          description: OK
+
+  /admin/stats:
+    get:
+      tags: [admin]
+      summary: Estatisticas gerais (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
 
   /admin/users:
     get:
-      tags:
-        - Admin
-      summary: Listar todos os usuários
+      tags: [admin]
+      summary: Listar usuarios (admin)
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Lista de usuários
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-        '403':
-          description: Sem permissão (apenas ADMIN)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: OK
 
-  /admin/rentals:
+  /admin/users/{id}/ban:
+    patch:
+      tags: [admin]
+      summary: Banir ou desbanir usuario (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BanUserDto'
+            examples:
+              body:
+                value:
+                  isBanned: true
+      responses:
+        '200':
+          description: OK
+
+  /admin/users/{id}/verify:
+    patch:
+      tags: [admin]
+      summary: Verificar vendedor (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifySellerDto'
+            examples:
+              body:
+                value:
+                  isVerifiedSeller: true
+      responses:
+        '200':
+          description: OK
+
+  /admin/users/{id}/plan:
+    patch:
+      tags: [admin]
+      summary: Alterar plano do usuario (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserPlanDto'
+            examples:
+              body:
+                value:
+                  plan: premium
+                  expiresAt: "2026-12-31T23:59:59.000Z"
+      responses:
+        '200':
+          description: OK
+
+  /admin/machines:
     get:
-      tags:
-        - Admin
-      summary: Listar todos os aluguéis
+      tags: [admin]
+      summary: Listar maquinas (admin)
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Lista de aluguéis
+          description: OK
+
+  /admin/machines/{id}/status:
+    patch:
+      tags: [admin]
+      summary: Aprovar ou reprovar maquina (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMachineStatusDto'
+            examples:
+              body:
+                value:
+                  status: ACTIVE
+      responses:
+        '200':
+          description: OK
+
+  /admin/machines/{id}/feature:
+    patch:
+      tags: [admin]
+      summary: Destacar maquina (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureMachineDto'
+            examples:
+              body:
+                value:
+                  isFeatured: true
+      responses:
+        '200':
+          description: OK
+
+  /admin/machines/{id}:
+    delete:
+      tags: [admin]
+      summary: Deletar maquina (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sem conteudo
+
+  /admin/reviews:
+    get:
+      tags: [admin]
+      summary: Listar avaliacoes (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /admin/reviews/{id}:
+    delete:
+      tags: [admin]
+      summary: Deletar avaliacao (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sem conteudo
+
+  /admin/settings:
+    get:
+      tags: [admin]
+      summary: Obter configuracoes do site (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [admin]
+      summary: Atualizar configuracoes do site (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsDto'
+            examples:
+              body:
+                value:
+                  siteName: BaitaBriq
+                  homeTitle: Encontre maquinas para seu negocio
+                  maintenanceMode: false
+                  whatsappSupport: "5551999887766"
+      responses:
+        '200':
+          description: OK
+
+  /admin/banners:
+    post:
+      tags: [admin]
+      summary: Criar banner (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBannerDto'
+            examples:
+              body:
+                value:
+                  imageUrl: https://res.cloudinary.com/demo/image/upload/banner-home.jpg
+                  link: https://baitabriq.com.br/promocoes
+                  active: true
+      responses:
+        '201':
+          description: Criado
+
+  /admin/banners/{id}:
+    delete:
+      tags: [admin]
+      summary: Deletar banner (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sem conteudo
+
+  /admin/categories:
+    get:
+      tags: [admin]
+      summary: Listar categorias (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [admin]
+      summary: Criar categoria (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryDto'
+            examples:
+              body:
+                value:
+                  name: Tratores
+                  slug: tratores
+                  icon: tractor
+                  isActive: true
+      responses:
+        '201':
+          description: Criado
+
+  /admin/categories/{id}:
+    put:
+      tags: [admin]
+      summary: Editar categoria (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryDto'
+            examples:
+              body:
+                value:
+                  name: Tratores e Implementos
+                  isActive: true
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags: [admin]
+      summary: Deletar categoria (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sem conteudo
+
+  /admin/categories/{id}/order:
+    patch:
+      tags: [admin]
+      summary: Reordenar categoria (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderCategoryDto'
+            examples:
+              body:
+                value:
+                  order: 2
+      responses:
+        '200':
+          description: OK
+
+  /admin/plans:
+    get:
+      tags: [admin]
+      summary: Listar planos (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /admin/plans/{id}:
+    put:
+      tags: [admin]
+      summary: Editar plano (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePlanDto'
+            examples:
+              body:
+                value:
+                  name: Premium
+                  price: 299.9
+                  maxAds: 200
+                  hasAnalytics: true
+      responses:
+        '200':
+          description: OK
+
+  /admin/verification-requests:
+    get:
+      tags: [admin]
+      summary: Listar solicitacoes de verificacao (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /admin/verification-requests/{id}/approve:
+    post:
+      tags: [admin]
+      summary: Aprovar solicitacao de verificacao (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+
+  /admin/verification-requests/{id}/reject:
+    post:
+      tags: [admin]
+      summary: Rejeitar solicitacao de verificacao (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectVerificationDto'
+            examples:
+              body:
+                value:
+                  reason: Documento enviado esta ilegivel.
+      responses:
+        '200':
+          description: OK
+
+  /health:
+    get:
+      tags: [health]
+      summary: Health check completo (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /health/ready:
+    get:
+      tags: [health]
+      summary: Readiness check
+      responses:
+        '200':
+          description: OK
+
+  /health/live:
+    get:
+      tags: [health]
+      summary: Liveness check
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Rental'
-        '403':
-          description: Sem permissão (apenas ADMIN)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/HealthResponse'
+
+  /metrics:
+    get:
+      tags: [metrics]
+      summary: Metricas da aplicacao (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
+  /webhooks/mercadopago:
+    get:
+      tags: [webhooks]
+      summary: Health check do webhook Mercado Pago
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [webhooks]
+      summary: Receber eventos do Mercado Pago
+      parameters:
+        - in: header
+          name: x-signature
+          required: false
+          schema:
+            type: string
+        - in: header
+          name: x-request-id
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+            examples:
+              payment:
+                value:
+                  action: payment.updated
+                  data:
+                    id: "1234567890"
+                  type: payment
+      responses:
+        '200':
+          description: Recebido
+        '401':
+          description: Assinatura invalida
+
+  /images/delete:
+    post:
+      tags: [images]
+      summary: Deletar imagem no Cloudinary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [publicId]
+              properties:
+                publicId:
+                  type: string
+            examples:
+              body:
+                value:
+                  publicId: baitabriq/machines/trator-frente
+      responses:
+        '200':
+          description: OK

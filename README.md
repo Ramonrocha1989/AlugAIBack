@@ -1,324 +1,217 @@
-# Equipment Rental Marketplace - Backend API
+# BaitaBriq API (Backend)
 
-Marketplace B2B para aluguel de equipamentos entre empresas.
+API B2B para compra, venda e negociacao de maquinas entre empresas.
 
-## Stack Tecnológica
+## Stack
 
-- **Node.js** + **TypeScript**
-- **NestJS** - Framework backend
-- **Prisma** - ORM
-- **PostgreSQL** - Banco de dados
-- **JWT** - Autenticação
-- **Zod** - Validação de dados
-- **Swagger** - Documentação de API
-- **Docker** - Containerização
-- **Sentry** - Error tracking
-- **BetterStack** - Logs centralizados
-- **Cloudinary** - Upload de imagens
-- **Mercado Pago** - Gateway de pagamento
+- Node.js + TypeScript
+- NestJS
+- Prisma + PostgreSQL
+- JWT (access token + refresh token em cookie)
+- Zod + class-validator
+- Swagger
+- Docker
+- Sentry + BetterStack
+- Cloudinary
+- Mercado Pago
 
-## Arquitetura
+## Estrutura
 
-### Estrutura de Pastas
-
-```
+```txt
 src/
-├── common/                    # Código compartilhado
-│   ├── pipes/                 # Pipes de validação (Zod)
-│   └── prisma.service.ts      # Serviço Prisma
-├── modules/                   # Módulos da aplicação
-│   ├── auth/                  # Autenticação e autorização
-│   │   ├── decorators/        # Decorators customizados
-│   │   ├── dto/               # DTOs de autenticação
-│   │   ├── guards/            # Guards (JWT, Roles)
-│   │   ├── auth.controller.ts
-│   │   ├── auth.service.ts
-│   │   ├── auth.module.ts
-│   │   └── jwt.strategy.ts
-│   ├── companies/             # Gestão de empresas
-│   ├── equipments/            # Gestão de equipamentos
-│   ├── rentals/               # Gestão de aluguéis
-│   └── admin/                 # Endpoints administrativos
-├── app.module.ts              # Módulo raiz
-└── main.ts                    # Entry point
+├── common/              # Infra compartilhada (guards, interceptors, prisma, logger)
+├── config/              # Validacao e configuracao de ambiente
+├── modules/
+│   ├── auth/            # Login, cadastro, refresh, perfil e exclusao de conta
+│   ├── users/           # Perfil do usuario
+│   ├── companies/       # Perfil da empresa e maquinas da empresa
+│   ├── machines/        # CRUD e metricas de anuncios
+│   ├── proposals/       # Fluxo de propostas
+│   ├── favorites/       # Favoritos
+│   ├── reviews/         # Avaliacoes
+│   ├── notifications/   # Notificacoes
+│   ├── plans/           # Planos publicos
+│   ├── subscriptions/   # Acoes de assinatura
+│   ├── verification/    # Solicitacao de verificacao
+│   ├── analytics/       # Resumos e benchmarks
+│   ├── categories/      # Categorias publicas
+│   ├── settings/        # Configuracoes publicas
+│   ├── admin/           # Painel administrativo
+│   ├── health/          # Health/readiness/liveness
+│   ├── metrics/         # Metricas protegidas
+│   ├── webhooks/        # Webhooks Mercado Pago
+│   └── images/          # Remocao de imagem no Cloudinary
+├── app.module.ts
+└── main.ts
 ```
 
-### Princípios Arquiteturais
+## Setup local
 
-1. **Separação de Responsabilidades**
-   - Controllers: Recebem requisições e retornam respostas
-   - Services: Contêm lógica de negócio
-   - Repositories: Acesso a dados via Prisma
-
-2. **Multi-tenant Ready**
-   - Todas as operações são isoladas por companyId
-   - Validação de propriedade em updates/deletes
-
-3. **Validação com Zod**
-   - Schemas tipados e reutilizáveis
-   - Validação em tempo de execução
-   - Mensagens de erro claras
-
-4. **Autenticação JWT**
-   - Token com informações do usuário
-   - Guards para proteção de rotas
-   - Decorators para controle de acesso
-
-## Instalação
-
-### Pré-requisitos
-
-- Node.js 20+
-- PostgreSQL 16+
-- Docker (opcional)
-
-### Setup Local
-
-1. Clone o repositório
-2. Instale as dependências:
+1. Instale dependencias:
 
 ```bash
 npm install
 ```
 
-3. Configure as variáveis de ambiente:
+2. Configure ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
-Edite o `.env` com suas configurações:
-
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/equipment_rental?schema=public"
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-JWT_EXPIRES_IN="7d"
-PORT=3000
-
-# Frontend URL
-FRONTEND_URL="http://localhost:3001"
-
-# Resend API Key
-RESEND_API_KEY="re_your_api_key_here"
-```
-
-**Nota**: Para configurar o email com Resend, veja [EMAIL_SETUP.md](./EMAIL_SETUP.md)
-
-4. Execute as migrations:
+3. Rode migrations e client do Prisma:
 
 ```bash
 npm run prisma:migrate
 npm run prisma:generate
 ```
 
-5. Inicie o servidor:
+4. Suba a API:
 
 ```bash
 npm run start:dev
 ```
 
-### Setup com Docker
+Swagger (dev): `http://localhost:3000/api/docs`
 
-```bash
-docker-compose up -d
-```
+## Endpoints principais
 
-## Endpoints da API
+Prefixo global: `/api`
 
-### Autenticação
+### Auth
 
-- `POST /api/auth/register` - Cadastro de empresa e usuário
-- `POST /api/auth/login` - Login
-- `POST /api/auth/verify-email` - Verificar email com token
-- `POST /api/auth/forgot-password` - Solicitar recuperação de senha
-- `POST /api/auth/reset-password` - Resetar senha com token
-- `POST /api/auth/request-delete` - Solicitar exclusão de conta
-- `POST /api/auth/confirm-delete` - Confirmar exclusão com token
+- `GET /auth/health`
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/logout`
+- `POST /auth/refresh`
+- `POST /auth/forgot-password`
+- `POST /auth/reset-password`
+- `POST /auth/verify-email`
+- `GET /auth/me`
+- `PUT /auth/profile`
+- `POST /auth/upgrade-plan` (admin)
+- `POST /auth/request-delete`
+- `POST /auth/confirm-delete`
 
-### Empresas
+### Users
 
-- `GET /api/companies/me` - Dados da minha empresa
+- `GET /users/me`
+- `PUT /users/me`
 
-### Planos
+### Companies
 
-- `GET /api/plans` - Listar planos disponíveis (Free e Lojista)
+- `GET /companies/me`
+- `PUT /companies/profile`
+- `GET /companies/:id`
+- `GET /companies/:id/machines`
 
-### Equipamentos
+### Machines
 
-- `POST /api/equipments` - Criar equipamento (valida limite de anúncios)
-- `GET /api/equipments` - Listar equipamentos (ordenados por plano)
-- `GET /api/equipments/:id` - Detalhes do equipamento (incrementa views)
-- `PUT /api/equipments/:id` - Atualizar equipamento
-- `DELETE /api/equipments/:id` - Deletar equipamento
-- `POST /api/equipments/:id/track-whatsapp` - Rastrear clique no WhatsApp
-- `POST /api/equipments/:id/mark-lead` - Marcar lead qualificado
+- `POST /machines`
+- `GET /machines`
+- `GET /machines/my`
+- `GET /machines/:id`
+- `POST /machines/:id/view`
+- `POST /machines/:id/track-whatsapp`
+- `POST /machines/:id/mark-lead`
+- `PUT /machines/:id`
+- `DELETE /machines/:id`
 
-### Aluguéis
+### Proposals
 
-- `POST /api/rentals` - Solicitar aluguel
-- `GET /api/rentals/my` - Meus aluguéis (como locador ou locatário)
-- `PUT /api/rentals/:id/approve` - Aprovar aluguel
-- `PUT /api/rentals/:id/reject` - Rejeitar aluguel
+- `POST /proposals`
+- `GET /proposals`
+- `PATCH /proposals/:id/accept`
+- `PATCH /proposals/:id/reject`
+- `PATCH /proposals/:id/counter`
+- `PATCH /proposals/:id/view`
+- `DELETE /proposals/:id`
+
+### Favorites
+
+- `POST /favorites`
+- `GET /favorites`
+- `GET /favorites/check/:machineId`
+- `DELETE /favorites/:machineId`
+
+### Reviews
+
+- `POST /reviews`
+- `GET /reviews/user/:userId`
+- `GET /reviews/user/:userId/rating`
+- `GET /reviews/machine/:machineId`
+- `PUT /reviews/:id`
+- `DELETE /reviews/:id`
+
+### Notifications
+
+- `GET /notifications`
+- `GET /notifications/unread-count`
+- `PUT /notifications/:id/read`
+- `PUT /notifications/read-all`
+- `DELETE /notifications/:id`
+
+### Planos, assinatura e verificacao
+
+- `GET /plans`
+- `POST /subscriptions/cancel`
+- `POST /verification/request`
+
+### Analytics, catalogo e configuracao publica
+
+- `GET /analytics/summary`
+- `GET /analytics/category-benchmarks?category=...`
+- `GET /categories`
+- `GET /settings/public`
 
 ### Admin
 
-- `GET /api/admin/users` - Listar todos os usuários (ADMIN)
-- `GET /api/admin/rentals` - Listar todos os aluguéis (ADMIN)
+- `GET /admin/stats`
+- `GET /admin/users`
+- `PATCH /admin/users/:id/ban`
+- `PATCH /admin/users/:id/verify`
+- `PATCH /admin/users/:id/plan`
+- `GET /admin/machines`
+- `PATCH /admin/machines/:id/status`
+- `PATCH /admin/machines/:id/feature`
+- `DELETE /admin/machines/:id`
+- `GET /admin/reviews`
+- `DELETE /admin/reviews/:id`
+- `GET /admin/settings`
+- `POST /admin/settings`
+- `POST /admin/banners`
+- `DELETE /admin/banners/:id`
+- `GET /admin/categories`
+- `POST /admin/categories`
+- `PUT /admin/categories/:id`
+- `DELETE /admin/categories/:id`
+- `PATCH /admin/categories/:id/order`
+- `GET /admin/plans`
+- `PUT /admin/plans/:id`
+- `GET /admin/verification-requests`
+- `POST /admin/verification-requests/:id/approve`
+- `POST /admin/verification-requests/:id/reject`
 
-### Observabilidade
+### Observabilidade e webhooks
 
-- `GET /api/health` - Health check completo (DB, memória, uptime)
-- `GET /api/health/ready` - Readiness check (Kubernetes)
-- `GET /api/health/live` - Liveness check
-- `GET /api/metrics` - Métricas de negócio e sistema
+- `GET /health` (admin)
+- `GET /health/ready` (publico)
+- `GET /health/live` (publico)
+- `GET /metrics` (admin)
+- `POST /webhooks/mercadopago` (publico)
+- `GET /webhooks/mercadopago` (publico)
+- `POST /images/delete`
 
-## Documentação Swagger
-
-Acesse: `http://localhost:3000/api/docs`
-
-## Modelo de Dados
-
-### User
-- Usuário do sistema
-- Vinculado a uma empresa
-- Roles: ADMIN | COMPANY
-- Requer verificação de email para login
-- **plan**: Plano do usuário ('free' ou 'lojista')
-- **maxAds**: Limite de anúncios ativos (3 para free, ilimitado para lojista)
-
-### Company
-- Empresa cadastrada
-- Pode ter múltiplos usuários
-- Pode ter múltiplos equipamentos
-
-### Equipment
-- Equipamento disponível para aluguel
-- Pertence a uma empresa
-- Pode ter múltiplas imagens
-- **isPremium**: Se o anúncio é premium
-- **views**: Contador de visualizações
-- **whatsappClicks**: Contador de cliques no WhatsApp
-- **qualifiedLeads**: Contador de leads qualificados
-
-### Rental
-- Solicitação de aluguel
-- Status: PENDING | APPROVED | REJECTED | COMPLETED
-- Vincula equipamento e empresa locatária
-
-### Payment (Mock)
-- Pagamento simulado
-- Status: PENDING | PAID | FAILED
-
-### PasswordResetToken
-- Token para recuperação de senha
-- Expira em 1 hora
-- Uso único
-
-### EmailVerificationToken
-- Token para verificação de email
-- Expira em 24 horas
-- Uso único
-
-### DeleteToken
-- Token para confirmação de exclusão de conta
-- Expira em 24 horas
-- Uso único
-- Soft delete com período de graça de 30 dias
-
-## Integração com Front-end (Next.js + React Query)
-
-### Exemplo de uso com React Query
-
-```typescript
-// Login
-const loginMutation = useMutation({
-  mutationFn: async (data: LoginDto) => {
-    const response = await fetch('http://localhost:3000/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return response.json();
-  },
-});
-
-// Listar equipamentos
-const { data: equipments } = useQuery({
-  queryKey: ['equipments'],
-  queryFn: async () => {
-    const response = await fetch('http://localhost:3000/api/equipments', {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    return response.json();
-  },
-});
-```
-
-## Segurança
-
-- Senhas hasheadas com bcrypt
-- JWT em cookies httpOnly (proteção XSS)
-- CSRF protection com tokens únicos
-- Rate limiting (5 tentativas de login a cada 15min)
-- Guards para proteção de rotas
-- Validação de propriedade em operações sensíveis
-- CORS configurado com credentials
-- Tokens de uso único com expiração
-- Helmet com HSTS habilitado
-- Validação global com whitelist
-- Security headers (CSP, X-Frame-Options, etc)
-- **Proteção de dados sensíveis (LGPD/GDPR compliant)**
-
-### Endpoints de Segurança
-
-- `GET /api/auth/csrf-token` - Obter token CSRF
-- `POST /api/auth/logout` - Logout com limpeza de cookie
-- `GET /api/auth/me` - Perfil completo (incluindo dados sensíveis)
-
-**Documentação completa:**
-- [SECURITY_IMPLEMENTATION.md](./SECURITY_IMPLEMENTATION.md)
-- [SENSITIVE_DATA_PROTECTION.md](./SENSITIVE_DATA_PROTECTION.md) - Proteção LGPD/GDPR
-
-## 📚 Documentação Completa
-
-**Toda a documentação foi consolidada em um único arquivo:**
-
-👉 **[DOCS.md](./DOCS.md)** - Documentação completa do projeto
-
-Inclui:
-- 🏗️ Arquitetura e Stack
-- 🚀 Instalação e Setup
-- 📡 API Endpoints (Auth, Máquinas, Propostas, Favoritos, Reviews, Notificações)
-- 🔒 Segurança e LGPD
-- 🔍 Observabilidade (Health, Metrics, Sentry, BetterStack)
-- 🧪 Testes Automatizados
-- 🚢 Deploy e Produção
-- 🔧 Troubleshooting
-
-## Próximos Passos (Pós-MVP)
-
-- [x] ~~Integração com gateway de pagamento real~~ (Mercado Pago implementado)
-- [x] ~~Upload de imagens~~ (Cloudinary implementado)
-- [x] ~~Sistema de notificações~~ (Implementado)
-- [x] ~~Sistema de avaliações~~ (Implementado)
-- [x] ~~Observabilidade~~ (Sentry + BetterStack implementado)
-- [x] ~~Testes automatizados~~ (Jest + CI/CD implementado)
-- [ ] Chat entre empresas
-- [ ] Relatórios e analytics avançados
-
-## Scripts Disponíveis
+## Scripts uteis
 
 ```bash
-npm run start:dev      # Desenvolvimento com hot-reload
-npm run build          # Build para produção
-npm run start:prod     # Executar produção
-npm run test           # Testes unitários
-npm run test:e2e       # Testes E2E
-npm run test:cov       # Testes com cobertura
-npm run prisma:migrate # Executar migrations
-npm run prisma:studio  # Interface visual do banco
+npm run start:dev
+npm run build
+npm run start:prod
+npm run test
+npm run test:e2e
+npm run test:cov
+npm run prisma:migrate
+npm run prisma:studio
 ```
-
-## Licença
-
-MIT
