@@ -147,6 +147,9 @@ export class AuthController {
   private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
     const isProd = process.env.NODE_ENV === 'production';
     if (!isProd) return;
+    // Impedir que CDN/proxies cacheiem respostas com cookies
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: true,
