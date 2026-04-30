@@ -18,6 +18,8 @@ const envSchema = z.object({
 
   // Frontend
   FRONTEND_URL: z.string().url('FRONTEND_URL must be a valid URL'),
+  AUTH_COOKIE_DOMAIN: z.string().optional(),
+  AUTH_COOKIE_SAMESITE: z.enum(['lax', 'none']).default('lax'),
 
   // Email
   RESEND_API_KEY: z

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Res, Req, Put } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Res, Req, Put, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
@@ -91,32 +91,37 @@ export class AuthController {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logout successful' })
-  async logout(@CurrentUser() user: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refreshToken;
-    await this.authService.logout(user.userId, refreshToken);
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    const userId = (req as any).user?.userId as string | undefined;
+
+    if (userId) {
+      await this.authService.logout(userId, refreshToken);
+    } else if (refreshToken) {
+      await this.authService.revokeRefreshToken(refreshToken);
+    }
+
+    this.clearRefreshCookie(res);
     return { message: 'Logout realizado com sucesso' };
   }
 
   @Public()
+  @Throttle({ default: { limit: 20, ttl: 900000 } })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() body?: { refreshToken?: string }) {
-    const refreshToken = req.cookies?.refreshToken || body?.refreshToken;
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
-      res.status(HttpStatus.UNAUTHORIZED);
-      return { message: 'Refresh token ausente' };
+      throw new UnauthorizedException('Refresh token ausente');
     }
 
     const result = await this.authService.refreshAccessToken(refreshToken);
@@ -132,24 +137,46 @@ export class AuthController {
         company: company ? companyWithoutDocument : null,
       },
       accessToken: result.accessToken,
-      ...(process.env.NODE_ENV !== 'production' && {
-        refreshToken: result.refreshToken,
-      }),
     };
   }
 
   private setAuthCookies(res: Response, refreshToken: string) {
-    const isProd = process.env.NODE_ENV === 'production';
+    const { secure, sameSite, domain } = this.getRefreshCookieOptions();
+
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      ...(isProd && { domain: '.baitabriq.com.br' }),
+      secure,
+      sameSite,
+      ...(domain && { domain }),
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
     });
+  }
+
+  private clearRefreshCookie(res: Response) {
+    const { secure, sameSite, domain } = this.getRefreshCookieOptions();
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure,
+      sameSite,
+      ...(domain && { domain }),
+      path: '/',
+    });
+  }
+
+  private getRefreshCookieOptions() {
+    const isProd = process.env.NODE_ENV === 'production';
+    const sameSite = process.env.AUTH_COOKIE_SAMESITE === 'none' ? 'none' : 'lax';
+    const domain = process.env.AUTH_COOKIE_DOMAIN || (isProd ? '.baitabriq.com.br' : undefined);
+
+    return {
+      secure: isProd,
+      sameSite,
+      domain,
+    } as const;
   }
 
   @Public()

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -12,6 +12,8 @@ import { EmailService } from './email.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -119,12 +121,14 @@ export class AuthService {
     });
 
     if (!user) {
+      this.logger.warn(`Login falhou: usuário não encontrado (${dto.email})`);
       throw new UnauthorizedException('Email ou senha inválidos');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
 
     if (!isPasswordValid) {
+      this.logger.warn(`Login falhou: senha inválida (${dto.email})`);
       throw new UnauthorizedException('Email ou senha inválidos');
     }
 
@@ -377,6 +381,7 @@ export class AuthService {
     });
 
     if (!storedToken || storedToken.expiresAt < new Date()) {
+      this.logger.warn('Refresh falhou: token inválido ou expirado');
       throw new UnauthorizedException('Refresh token inválido ou expirado');
     }
 
@@ -384,6 +389,7 @@ export class AuthService {
     const deleted = await this.prisma.refreshToken.deleteMany({ where: { id: storedToken.id } });
 
     if (deleted.count === 0) {
+      this.logger.warn('Refresh falhou: token já utilizado');
       throw new UnauthorizedException('Refresh token já utilizado');
     }
 
@@ -445,6 +451,12 @@ export class AuthService {
         userId,
         ...(refreshToken && { token: refreshToken }),
       },
+    });
+  }
+
+  async revokeRefreshToken(refreshToken: string) {
+    await this.prisma.refreshToken.deleteMany({
+      where: { token: refreshToken },
     });
   }
 
