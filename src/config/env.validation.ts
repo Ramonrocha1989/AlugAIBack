@@ -15,6 +15,7 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
+  ENABLE_SWAGGER: z.coerce.boolean().default(false),
 
   // Frontend
   FRONTEND_URL: z.string().url('FRONTEND_URL must be a valid URL'),

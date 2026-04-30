@@ -84,7 +84,9 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  if (!isProd) {
+  const enableSwagger = process.env.ENABLE_SWAGGER === 'true' || !isProd;
+
+  if (enableSwagger) {
     const config = new DocumentBuilder()
       .setTitle('BaitaBriq API')
       .setDescription('API B2B para compra, venda e propostas de maquinas')
@@ -117,7 +119,9 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger documentation: http://localhost:${port}/api/docs`);
+  if (enableSwagger) {
+    console.log(`📚 Swagger documentation: http://localhost:${port}/api/docs`);
+  }
   console.log(`🔒 Security: Cookies + CSRF + Rate Limiting enabled`);
   console.log(`🏥 Health check: http://localhost:${port}/api/health`);
   console.log(`📊 Metrics: http://localhost:${port}/api/metrics`);
