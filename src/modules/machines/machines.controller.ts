@@ -43,7 +43,7 @@ export class MachinesController {
       if (filters[key]) filters[key] = parseFloat(filters[key]);
     });
     
-    ['acceptsTradeDown', 'acceptsTradeUp', 'acceptsGrains', 'isVerifiedSeller'].forEach(key => {
+    ['acceptsTradeDown', 'acceptsTradeUp', 'acceptsGrains', 'acceptsFinancing', 'isVerifiedSeller'].forEach(key => {
       if (filters[key]) filters[key] = filters[key] === 'true';
     });
 

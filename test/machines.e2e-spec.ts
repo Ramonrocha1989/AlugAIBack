@@ -29,6 +29,11 @@ describe('Machines (e2e)', () => {
     await prisma.refreshToken.deleteMany();
     await prisma.user.deleteMany();
     await prisma.company.deleteMany();
+    await prisma.category.upsert({
+      where: { slug: 'tratores' },
+      update: { isActive: true },
+      create: { name: 'Tratores', slug: 'tratores', isActive: true },
+    });
     
     await app.init();
 
@@ -62,7 +67,7 @@ describe('Machines (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           name: 'Trator Test John Deere 6110J',
-          category: 'TRACTORS',
+          category: 'tratores',
           businessType: 'SALE',
           description: 'Trator em excelente estado de conservação, revisado, com todos os documentos em dia e pronto para trabalho.',
           price: 100000,
@@ -90,7 +95,7 @@ describe('Machines (e2e)', () => {
         .post('/api/machines')
         .send({
           name: 'Trator Test John Deere 6110J',
-          category: 'TRACTORS',
+          category: 'tratores',
           businessType: 'SALE',
           description: 'Trator em excelente estado de conservação, revisado, com todos os documentos em dia e pronto para trabalho.',
           price: 100000,

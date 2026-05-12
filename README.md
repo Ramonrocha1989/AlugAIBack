@@ -118,6 +118,32 @@ Prefixo global: `/api`
 - `PUT /machines/:id`
 - `DELETE /machines/:id`
 
+#### Contrato de `GET /machines`
+
+Query params aceitos: `search`, `category`, `businessType`, `manufacturer`, `state`, `city`, `minPrice`, `maxPrice`, `minYear`, `maxYear`, `minEngineHours`, `maxEngineHours`, `minPower`, `maxPower`, `acceptsTradeDown`, `acceptsTradeUp`, `acceptsGrains`, `acceptsFinancing`, `isVerifiedSeller`, `sortBy`, `page`, `limit`.
+
+`category` deve ser o slug de uma categoria ativa. `businessType` aceita `SALE`, `RENTAL`, `EXCHANGE` ou `SERVICE`. `state` deve ser a sigla UF com 2 caracteres.
+
+`search` usa busca textual com normalização de acentos e ranking em `name`, `manufacturer`, `model`, `city`, `state` e `description`. Resultados mais relevantes aparecem primeiro quando `search` está presente.
+
+`sortBy` aceita `recent`, `created_desc`, `price_asc`, `price_desc`, `engine_hours_asc` e `year_desc`. Sem `search`, `recent`/`created_desc` priorizam plano, premium, destaque e data de criação.
+
+Resposta:
+
+```json
+{
+  "data": [],
+  "meta": {
+    "total": 0,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 0
+  }
+}
+```
+
+Itens de listagem retornam os campos públicos da máquina, `ownerPlan` e `isVerifiedSeller`. O telefone do dono e o objeto `owner` não são enviados na listagem; use `GET /machines/:id` para o detalhe.
+
 ### Proposals
 
 - `POST /proposals`

@@ -69,6 +69,7 @@ export const MachineFiltersSchema = z.object({
   acceptsTradeDown: z.boolean().optional(),
   acceptsTradeUp: z.boolean().optional(),
   acceptsGrains: z.boolean().optional(),
+  acceptsFinancing: z.boolean().optional(),
   isVerifiedSeller: z.boolean().optional(),
   sortBy: z.enum(['recent', 'created_desc', 'price_asc', 'price_desc', 'engine_hours_asc', 'year_desc']).default('recent'),
   page: z.number().int().positive().default(1),
